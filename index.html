@@ -1,0 +1,1948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Vessel Analyzer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#111827;color:#e5e7eb;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+#init-overlay{position:fixed;inset:0;background:#111827;display:flex;align-items:center;justify-content:center;z-index:100}
+.init-box{text-align:center;max-width:420px;padding:40px}
+.init-title{font-size:28px;color:#c084fc;margin-bottom:8px}
+.init-sub{color:#6b7280;font-size:13px;margin-bottom:24px}
+#init-msg{color:#9ca3af;font-size:13px;margin-bottom:16px;min-height:20px}
+.pbar{background:#1f2937;border-radius:8px;height:6px;overflow:hidden}
+#pfill{height:100%;background:linear-gradient(90deg,#7c3aed,#c084fc);width:0%;transition:width .4s}
+.app{display:flex;flex:1;overflow:hidden}
+/* sidebar */
+.sidebar{width:185px;min-width:185px;background:#1f2937;border-right:1px solid #374151;display:flex;flex-direction:column;overflow:hidden}
+.upload-btn{margin:10px;padding:9px;background:#7c3aed;border:none;color:#fff;border-radius:8px;cursor:pointer;font-size:13px;transition:background .15s}
+.upload-btn:hover{background:#6d28d9}
+#file-input{display:none}
+.drop-hint{font-size:10px;color:#4b5563;text-align:center;padding:0 8px 8px;margin-top:-4px}
+.img-list{flex:1;overflow-y:auto;padding:4px}
+.img-item{padding:5px;border-radius:6px;cursor:pointer;margin-bottom:4px;border:2px solid transparent;transition:all .12s;position:relative}
+.img-item:hover{background:#374151}
+.img-item.active{border-color:#c084fc;background:#2d1b69}
+.img-thumb{width:100%;height:76px;object-fit:contain;background:#111827;border-radius:4px;display:block}
+.img-name{font-size:10px;color:#9ca3af;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.img-remove{position:absolute;top:4px;right:4px;background:rgba(220,38,38,.85);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:5;line-height:1}
+.img-item:hover .img-remove{display:flex}
+.img-remove:hover{background:#dc2626}
+.img-check{position:absolute;top:4px;left:4px;z-index:5;width:14px;height:14px;cursor:pointer;accent-color:#7c3aed}
+/* main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.controls{background:#1f2937;border-bottom:1px solid #374151;padding:8px 14px;display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap}
+.cgrp{display:flex;flex-direction:column;gap:4px}
+.cgrp>label{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.07em}
+.brow{display:flex;gap:3px;flex-wrap:wrap}
+.fb{padding:4px 8px;border:1.5px solid #374151;border-radius:5px;background:#111827;color:#9ca3af;cursor:pointer;font-size:11px;transition:all .12s;white-space:nowrap}
+.fb:hover{border-color:#6b7280;color:#e5e7eb}
+.fb.on{background:#7c3aed;border-color:#7c3aed;color:#fff;font-weight:600}
+.px-wrap{display:flex;align-items:center;gap:5px}
+.px-in{background:#111827;border:1.5px solid #374151;border-radius:5px;color:#e5e7eb;padding:4px 7px;font-size:12px;width:68px}
+.px-in:focus{outline:none;border-color:#7c3aed}
+.px-u{font-size:11px;color:#6b7280}
+/* metrics */
+.metrics{background:#0f172a;border-bottom:1px solid #374151;padding:6px 14px;display:flex;gap:16px;align-items:center}
+.met{display:flex;flex-direction:column;align-items:center}
+.met .v{font-size:17px;font-weight:700;color:#c084fc}
+.met .l{font-size:10px;color:#6b7280}
+.mdiv{width:1px;height:30px;background:#1f2937}
+.metrics-btns{margin-left:auto;display:flex;gap:6px}
+.act-btn{padding:5px 10px;border:1.5px solid #374151;border-radius:5px;background:#111827;color:#9ca3af;cursor:pointer;font-size:11px;transition:all .12s;white-space:nowrap}
+.act-btn:hover{border-color:#6b7280;color:#e5e7eb}
+.act-btn.green{border-color:#059669;color:#6ee7b7;background:#022c22}
+.act-btn.green:hover{background:#059669;color:#fff}
+.act-btn.amber{border-color:#d97706;color:#fcd34d;background:#1c1008}
+.act-btn.amber:hover{background:#d97706;color:#fff}
+/* results */
+.results{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px;overflow:hidden;min-height:0}
+.panel{background:#1f2937;border-radius:8px;display:flex;flex-direction:column;overflow:hidden}
+.ptitle{font-size:10px;color:#6b7280;padding:5px 8px;border-bottom:1px solid #374151;text-transform:uppercase;letter-spacing:.06em;flex-shrink:0;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.ptitle-btns{margin-left:auto;display:flex;gap:4px;align-items:center}
+.pb{padding:2px 7px;border:1.5px solid #374151;border-radius:4px;background:#111827;color:#9ca3af;cursor:pointer;font-size:10px;transition:all .12s;white-space:nowrap}
+.pb:hover{border-color:#6b7280;color:#e5e7eb}
+.pb.roi-on{background:#059669;border-color:#059669;color:#fff}
+.pb.clr:hover{border-color:#dc2626;color:#fca5a5}
+.pb.amber{border-color:#d97706;color:#fcd34d}
+.pb.amber:hover{background:#d97706;color:#fff}
+.img-wrap{flex:1;position:relative;overflow:hidden;min-height:0;background:#000}
+.img-wrap img{width:100%;height:100%;object-fit:contain;display:block}
+.img-wrap canvas{position:absolute;inset:0;pointer-events:none}
+#paint-canvas{z-index:1}
+#roi-canvas{z-index:2}
+#paint-canvas.paint-active{pointer-events:all;cursor:none}
+.img-wrap canvas.draw-active{pointer-events:all;cursor:crosshair}
+.computing{position:absolute;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;font-size:13px;color:#c084fc;z-index:10}
+.empty-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#374151;font-size:13px;pointer-events:none}
+.roi-hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(5,150,105,.9);color:#fff;font-size:11px;padding:4px 10px;border-radius:12px;pointer-events:none;white-space:nowrap;z-index:20}
+.status{padding:5px 14px;background:#0f172a;font-size:11px;color:#4b5563;border-top:1px solid #1f2937;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sp{display:inline-block;width:11px;height:11px;border:2px solid #374151;border-top-color:#c084fc;border-radius:50%;animation:spin .7s linear infinite;margin-right:5px;vertical-align:middle}
+/* log modal */
+.log-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;flex-direction:column;justify-content:flex-end}
+.log-backdrop.open{display:flex}
+.log-panel{background:#1f2937;border-top:2px solid #374151;max-height:55vh;display:flex;flex-direction:column}
+.log-header{padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #374151;flex-shrink:0}
+.log-header h3{font-size:13px;color:#c084fc;font-weight:600}
+.log-header-btns{margin-left:auto;display:flex;gap:6px}
+.log-body{overflow-y:auto;flex:1}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead{position:sticky;top:0;background:#111827;z-index:1}
+th{padding:6px 10px;text-align:left;color:#6b7280;font-weight:600;letter-spacing:.04em;border-bottom:1px solid #374151}
+td{padding:5px 10px;border-bottom:1px solid #1f2937;color:#d1d5db}
+tr:hover td{background:#0f172a}
+.del-btn{background:none;border:none;color:#4b5563;cursor:pointer;font-size:12px;padding:1px 4px}
+.del-btn:hover{color:#f87171}
+.log-empty{padding:24px;text-align:center;color:#374151;font-size:12px}
+.dl-dropdown{position:absolute;top:100%;right:0;background:#1f2937;border:1px solid #374151;border-radius:6px;padding:4px;z-index:50;display:none;flex-direction:column;gap:2px;min-width:90px}
+.dl-dropdown.open{display:flex}
+.dl-opt{padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11px;color:#d1d5db;white-space:nowrap}
+.dl-opt:hover{background:#374151}
+.dl-wrap{position:relative}
+/* toast */
+.toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:#059669;color:#fff;padding:8px 18px;border-radius:20px;font-size:12px;z-index:300;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* ── Menu bar ─────────────────────────────────────────────────────── */
+.menubar{background:#0d1117;border-bottom:1px solid #21262d;display:flex;align-items:center;gap:2px;padding:0 8px;flex-shrink:0;height:28px;z-index:50}
+.menu-item{position:relative}
+.menu-btn{background:none;border:none;color:#8b949e;font-size:12px;padding:3px 10px;cursor:pointer;border-radius:4px;transition:all .12s;white-space:nowrap}
+.menu-btn:hover,.menu-item.open .menu-btn{background:#21262d;color:#e6edf3}
+.menu-dropdown{position:absolute;top:100%;left:0;background:#161b22;border:1px solid #30363d;border-radius:6px;padding:4px;z-index:100;display:none;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.menu-item.open .menu-dropdown{display:block}
+.menu-dd-item{padding:5px 12px;border-radius:4px;cursor:pointer;font-size:12px;color:#c9d1d9;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.menu-dd-item:hover{background:#21262d}
+.menu-dd-item.disabled{color:#484f58;cursor:default;pointer-events:none}
+.menu-sep{height:1px;background:#21262d;margin:4px 0}
+.menu-dd-item kbd{margin-left:auto;font-size:10px;color:#484f58;background:#0d1117;padding:1px 5px;border-radius:3px;border:1px solid #30363d}
+/* ── Modals ───────────────────────────────────────────────────────── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center}
+.modal-backdrop.open{display:flex}
+.modal{background:#161b22;border:1px solid #30363d;border-radius:10px;max-width:560px;width:90%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,.6)}
+.modal-header{padding:14px 18px;border-bottom:1px solid #21262d;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-header h3{font-size:15px;color:#e6edf3;font-weight:600}
+.modal-close{background:none;border:none;color:#8b949e;cursor:pointer;font-size:16px;padding:2px 6px;border-radius:4px}
+.modal-close:hover{background:#21262d;color:#e6edf3}
+.modal-body{padding:18px;overflow-y:auto;flex:1;font-size:13px;color:#8b949e;line-height:1.7}
+.modal-body h4{color:#c9d1d9;font-size:13px;margin:12px 0 5px;font-weight:600}
+.modal-body p{margin-bottom:8px}
+.modal-body ul{padding-left:18px}
+.modal-body li{margin-bottom:5px}
+.modal-body code{background:#0d1117;padding:1px 5px;border-radius:3px;font-size:11px;color:#79c0ff}
+.modal-footer{padding:12px 18px;border-top:1px solid #21262d;display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+.modal-btn{padding:6px 16px;border-radius:6px;border:1px solid #30363d;background:#21262d;color:#c9d1d9;cursor:pointer;font-size:12px;transition:all .12s}
+.modal-btn:hover{background:#30363d}
+.modal-btn.primary{background:#7c3aed;border-color:#7c3aed;color:#fff}
+.modal-btn.primary:hover{background:#6d28d9}
+.setting-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:8px;background:#0d1117;border-radius:6px}
+.setting-row label{flex:1;color:#c9d1d9;font-size:12px}
+.setting-row input[type=range]{width:100px;accent-color:#7c3aed}
+.setting-row input[type=number]{width:70px;background:#161b22;border:1px solid #30363d;border-radius:4px;color:#e6edf3;padding:3px 7px;font-size:12px}
+.setting-row select{background:#161b22;border:1px solid #30363d;border-radius:4px;color:#e6edf3;padding:3px 7px;font-size:12px;cursor:pointer}
+.setting-val{min-width:36px;font-size:11px;color:#7c3aed;text-align:right}
+</style>
+</head>
+<body>
+
+<div id="init-overlay">
+  <div class="init-box">
+    <div class="init-title">🔬 Vessel Analyzer</div>
+    <div class="init-sub">Angiography segmentation · Frangi vesselness filter</div>
+    <div id="init-msg">Starting…</div>
+    <div class="pbar"><div id="pfill"></div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="app" id="app" style="display:none" style="flex-direction:column">
+  <!-- Menu bar -->
+  <div class="menubar" id="menubar">
+    <div class="menu-item" id="m-file">
+      <button class="menu-btn" onclick="toggleMenu('m-file')">File</button>
+      <div class="menu-dropdown">
+        <div class="menu-dd-item" onclick="document.getElementById('file-input').click();closeMenus()">📂 Open Images…</div>
+        <div class="menu-sep"></div>
+        <div class="menu-dd-item" onclick="menuSaveCurrent('vmap','png')">💾 Save Vesselness Map — PNG</div>
+        <div class="menu-dd-item" onclick="menuSaveCurrent('vmap','jpg')">💾 Save Vesselness Map — JPG</div>
+        <div class="menu-dd-item" onclick="menuSaveCurrent('overlay','png')">💾 Save Vessel Overlay — PNG</div>
+        <div class="menu-dd-item" onclick="menuSaveCurrent('overlay','jpg')">💾 Save Vessel Overlay — JPG</div>
+        <div class="menu-sep"></div>
+        <div class="menu-dd-item" onclick="saveAllAsZip();closeMenus()">📦 Save All Analyzed → ZIP</div>
+        <div class="menu-dd-item" onclick="openModal('video-modal');closeMenus()">🎬 Export Video (WebM)…</div>
+        <div class="menu-dd-item" onclick="exportCSV();closeMenus()">📊 Export Measurements CSV</div>
+        <div class="menu-sep"></div>
+        <div class="menu-dd-item" onclick="if(confirm('Start a new session? All unsaved data will be lost.'))location.reload()">🔄 New Session</div>
+      </div>
+    </div>
+    <div class="menu-item" id="m-edit">
+      <button class="menu-btn" onclick="toggleMenu('m-edit')">Edit</button>
+      <div class="menu-dropdown">
+        <div class="menu-dd-item" onclick="openModal('export-settings-modal');closeMenus()">🖼 Export Resolution…</div>
+        <div class="menu-dd-item" onclick="openModal('video-modal');closeMenus()">🎞 Video Settings…</div>
+        <div class="menu-sep"></div>
+        <div class="menu-dd-item" onclick="clearPaint();closeMenus()">✕ Clear Paint (current image)</div>
+        <div class="menu-dd-item" onclick="clearROI();closeMenus()">✕ Clear ROI (current image)</div>
+        <div class="menu-dd-item" onclick="resetSequence();closeMenus()">🔄 Reset Sequence Cache</div>
+        <div class="menu-sep"></div>
+        <div class="menu-dd-item" onclick="freeMemory();closeMenus()">🧹 Free Memory (clear vmap cache)</div>
+      </div>
+    </div>
+    <div class="menu-item" id="m-help">
+      <button class="menu-btn" onclick="toggleMenu('m-help')">Help</button>
+      <div class="menu-dropdown">
+        <div class="menu-dd-item" onclick="openModal('guide-modal');closeMenus()">📖 Quick Start Guide</div>
+        <div class="menu-dd-item" onclick="openModal('tools-modal');closeMenus()">🔧 Tool Reference</div>
+        <div class="menu-sep"></div>
+        <div class="menu-dd-item" onclick="openModal('about-modal');closeMenus()">ℹ About</div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;flex:1;overflow:hidden">
+  <div class="sidebar">
+    <button class="upload-btn" onclick="document.getElementById('file-input').click()">＋ Upload Images</button>
+    <input type="file" id="file-input" accept="image/*,.tif,.tiff" multiple>
+    <div class="drop-hint">or drag &amp; drop anywhere</div>
+    <div style="display:flex;gap:4px;padding:0 8px 6px;margin-top:-2px">
+      <button onclick="sidebarSelAll(true)"  style="flex:1;padding:3px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;font-size:10px;cursor:pointer" onmouseover="this.style.color='#e5e7eb'" onmouseout="this.style.color='#9ca3af'">☑ All</button>
+      <button onclick="sidebarSelAll(false)" style="flex:1;padding:3px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;font-size:10px;cursor:pointer" onmouseover="this.style.color='#e5e7eb'" onmouseout="this.style.color='#9ca3af'">☐ None</button>
+    </div>
+    <div class="img-list" id="img-list"><div style="padding:12px;font-size:11px;color:#4b5563;text-align:center">No images</div></div>
+  </div>
+
+  <div class="main">
+    <div class="controls">
+      <div class="cgrp">
+        <label>Pixel size</label>
+        <div class="px-wrap">
+          <input type="number" id="px-size" class="px-in" value="0.1" step="0.01" min="0.001">
+          <span class="px-u">µm/px</span>
+        </div>
+      </div>
+      <div class="cgrp">
+        <label>Vessel width — sigmas</label>
+        <div class="brow" id="sigma-btns"></div>
+      </div>
+      <div class="cgrp">
+        <label>Min segment size</label>
+        <div class="brow" id="minsize-btns"></div>
+      </div>
+      <div class="cgrp" style="justify-content:flex-end;flex-direction:row;gap:6px;align-self:flex-end">
+        <button class="act-btn amber" onclick="saveDefaults()" title="Save current settings as default for next session">⭐ Save as Default</button>
+        <button class="act-btn" style="border-color:#0891b2;color:#67e8f9;background:#001f2e" onclick="openSeq()">🎬 Sequence Analysis</button>
+        <button class="act-btn green" onclick="openLog()">📋 Measurements Log</button>
+      </div>
+
+    </div>
+
+    <div class="metrics">
+      <div class="met"><span class="v" id="m-frac">—</span><span class="l">Vessel %</span></div>
+      <div class="mdiv"></div>
+      <div class="met"><span class="v" id="m-um2">—</span><span class="l">µm²</span></div>
+      <div class="mdiv"></div>
+      <div class="met"><span class="v" id="m-mm2">—</span><span class="l">mm²</span></div>
+      <div class="mdiv"></div>
+      <div class="met"><span class="v" id="m-segs">—</span><span class="l">Segments</span></div>
+      <div class="metrics-btns">
+        <button class="act-btn" id="copy-btn" onclick="copyMetrics()">📋 Copy</button>
+        <button class="act-btn green" id="save-log-btn" onclick="saveToLogBtn()">＋ Save to Log</button>
+        <button onclick="runBtn()" id="run-btn" style="padding:6px 16px;border:2px solid #7c3aed;border-radius:6px;background:#3b0764;color:#e9d5ff;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;white-space:nowrap" onmouseover="this.style.background='#7c3aed'" onmouseout="this.style.background='#3b0764'">▶ Run</button>
+      </div>
+    </div>
+
+    <div class="results">
+      <div class="panel">
+        <div class="ptitle">Vesselness Map<span id="ptitle-vmap-name" style="color:#a78bfa;font-style:normal;text-transform:none;letter-spacing:normal;font-size:10px"></span>
+          <div class="ptitle-btns">
+            <div class="dl-wrap">
+              <button class="pb" onclick="toggleDL('dl-vmap')">⬇ Save</button>
+              <div class="dl-dropdown" id="dl-vmap">
+                <div class="dl-opt" onclick="downloadImg('vmap-img','png','vesselness_map');toggleDL('dl-vmap')">PNG</div>
+                <div class="dl-opt" onclick="downloadImg('vmap-img','jpg','vesselness_map');toggleDL('dl-vmap')">JPG</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="img-wrap" id="roi-wrap">
+          <div class="empty-hint" id="hint-vmap">Upload an image</div>
+          <img id="vmap-img" style="display:none">
+          <div class="computing" id="comp-vmap"><span class="sp"></span> Computing…</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">Vessel Overlay<span id="ptitle-ov-name" style="color:#a78bfa;font-style:normal;text-transform:none;letter-spacing:normal;font-size:10px"></span>
+          <div class="ptitle-btns">
+            <button class="pb" id="roi-draw-btn" onclick="toggleDraw()">✏ Draw ROI</button>
+            <button class="pb amber" id="roi-copy-btn" style="display:none" onclick="copyROI()">📋 Copy ROI</button>
+            <button class="pb amber" id="roi-paste-btn" style="display:none" onclick="pasteROI()">📌 Paste ROI</button>
+            <button class="pb clr" id="roi-clear-btn" style="display:none" onclick="clearROI()">✕ ROI</button>
+            <span style="width:1px;height:14px;background:#374151;display:inline-block;margin:0 2px"></span>
+            <button class="pb" id="paint-btn" onclick="togglePaint()">🖌 Paint</button>
+            <button class="pb" id="erase-btn" onclick="toggleErase()" style="display:none">🧹 Erase</button>
+            <select id="brush-size" style="background:#111827;border:1.5px solid #374151;border-radius:4px;color:#9ca3af;font-size:10px;padding:1px 3px;cursor:pointer;display:none">
+              <option value="4">XS</option><option value="8">S</option><option value="14" selected>M</option>
+              <option value="22">L</option><option value="35">XL</option>
+            </select>
+            <button class="pb clr" id="paint-clear-btn" style="display:none" onclick="clearPaint()">✕ Paint</button>
+            <div class="dl-wrap">
+              <button class="pb" onclick="toggleDL('dl-ov')">⬇ Save</button>
+              <div class="dl-dropdown" id="dl-ov">
+                <div class="dl-opt" onclick="downloadImg('overlay-img','png','vessel_overlay');toggleDL('dl-ov')">PNG</div>
+                <div class="dl-opt" onclick="downloadImg('overlay-img','jpg','vessel_overlay');toggleDL('dl-ov')">JPG</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="img-wrap" id="ov-wrap">
+          <div class="empty-hint" id="hint-ov">Upload an image</div>
+          <img id="overlay-img" style="display:none">
+          <canvas id="ov-canvas"></canvas>
+          <canvas id="paint-canvas"></canvas>
+          <canvas id="roi-canvas"></canvas>
+          <div class="computing" id="comp-ov"><span class="sp"></span> Computing…</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status" id="status">Upload an image to begin</div>
+  </div>
+</div>
+
+
+<!-- Sequence drawer -->
+<div class="log-backdrop" id="seq-backdrop" onclick="closeSeqOnBd(event)">
+  <div class="log-panel" id="seq-panel" onclick="event.stopPropagation()" style="max-height:70vh">
+    <div class="log-header">
+      <h3>🎬 Sequence Analysis</h3>
+      <div class="log-header-btns">
+        <button class="act-btn" style="border-color:#dc2626;color:#fca5a5;background:#1c0a0a" onclick="resetSequence()" title="Clears all projection and sequence cache — fixes display glitches">🔄 Reset Sequence</button>
+        <button class="act-btn" onclick="closeSeq()">✕ Close</button>
+      </div>
+    </div>
+    <div style="display:flex;flex:1;overflow:hidden;min-height:0">
+      <!-- Left: setup -->
+      <div style="width:280px;min-width:280px;border-right:1px solid #374151;padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:10px">
+        <div>
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">1 · Select frames</div>
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <button class="act-btn" onclick="seqSelAll(true)" style="font-size:10px;padding:3px 8px">Select All</button>
+            <button class="act-btn" onclick="seqSelAll(false)" style="font-size:10px;padding:3px 8px">Deselect All</button>
+          </div>
+          <div id="seq-img-list" style="display:flex;flex-direction:column;gap:3px;max-height:120px;overflow-y:auto"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">2 · Projection method</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <button class="fb" id="proj-maxv-btn" onclick="setProjMethod('max_v')" title="Best for cardiac: captures vessel at any cardiac phase">Max Vesselness ★</button>
+            <button class="fb" id="proj-min-btn" onclick="setProjMethod('min')" title="Min pixel = most contrast-filled frame per pixel">Min Intensity</button>
+            <button class="fb" id="proj-std-btn" onclick="setProjMethod('std')" title="High std = pixels that move = vessels">Std Dev</button>
+            <button class="fb on" id="proj-mean-btn" onclick="setProjMethod('mean')">Mean</button>
+            <button class="fb" id="proj-med-btn" onclick="setProjMethod('median')">Median</button>
+          </div>
+          <div id="proj-method-hint" style="font-size:10px;color:#4b5563;margin-top:4px">Mean: averages all frames (baseline)</div>
+        </div>
+        <button class="act-btn" style="border-color:#0891b2;color:#67e8f9;background:#001f2e" onclick="computeProjection()">▶ Compute Projection</button>
+        <div id="proj-thumb-wrap" style="display:none">
+          <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Projection preview:</div>
+          <img id="proj-thumb" style="width:100%;border-radius:4px;border:1px solid #374151">
+          <div style="font-size:10px;color:#6ee7b7;margin-top:4px" id="proj-info"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">3 · Auto-optimize settings</div>
+          <div style="font-size:10px;color:#4b5563;margin-bottom:6px">Finds the min segment size where removing more stops reducing noise and starts cutting real vessels (the elbow point).</div>
+          <button class="act-btn amber" onclick="runAutoOptimize()">🔍 Auto-Optimize Min Size</button>
+          <div id="optimize-result" style="margin-top:8px;display:none">
+            <canvas id="elbow-chart" height="80" style="width:100%;border-radius:4px;background:#0f172a"></canvas>
+            <div id="optimize-msg" style="font-size:11px;color:#6ee7b7;margin-top:5px"></div>
+            <button class="act-btn green" style="margin-top:5px;width:100%" onclick="applyOptimized()">✓ Apply Recommended Settings</button>
+          </div>
+        </div>
+        <div id="guide-section" style="display:none">
+          <div style="font-size:10px;color:#0891b2;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">3b · Projection-guided fill</div>
+          <div style="font-size:10px;color:#4b5563;margin-bottom:6px">Uses the projection as a spatial prior: where a vessel is seen in <em>any</em> frame, it relaxes the threshold for that region in each individual frame — filling gaps where a vessel is only partially visible.</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <label style="font-size:10px;color:#6b7280;white-space:nowrap">Guide strength</label>
+            <input type="range" id="guide-slider" min="0" max="100" value="40" step="5" style="flex:1;accent-color:#0891b2" oninput="document.getElementById('guide-val').textContent=this.value+'%'">
+            <span id="guide-val" style="font-size:11px;color:#67e8f9;min-width:32px">40%</span>
+          </div>
+          <div style="font-size:10px;color:#4b5563">0% = no guidance · 100% = max fill (may add noise)</div>
+          <hr style="border-color:#1f2937;margin:8px 0">
+          <div style="font-size:10px;color:#0891b2;font-weight:600;margin-bottom:4px">Or: hard projection template</div>
+          <div style="font-size:10px;color:#4b5563;margin-bottom:6px">Builds the projection vessel mask and shows it as a <span style="color:#67e8f9">cyan overlay</span> on every frame. Press ▶ Run on any frame — the template forces vessel detection wherever the projection saw them (very relaxed threshold within template region).</div>
+          <button class="act-btn" style="border-color:#0891b2;color:#67e8f9;background:#001f2e;width:100%" onclick="applyProjTemplate()">📐 Apply Projection Template to All Frames</button>
+          <button class="act-btn" id="clear-template-btn" style="display:none;border-color:#dc2626;color:#fca5a5;width:100%;margin-top:4px" onclick="clearProjTemplate()">✕ Remove Template</button>
+        </div>
+        <div>
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">4 · Apply to all frames</div>
+          <div style="font-size:10px;color:#4b5563;margin-bottom:6px">Uses current sigma + min size on every selected frame. First run takes ~20–40 s per frame.</div>
+          <button class="act-btn green" style="width:100%" onclick="applySequence()">▶▶ Analyze All Frames</button>
+          <div id="seq-progress" style="display:none;margin-top:8px">
+            <div style="font-size:10px;color:#9ca3af;margin-bottom:4px" id="seq-prog-msg">Processing…</div>
+            <div style="background:#1f2937;border-radius:4px;height:6px;overflow:hidden"><div id="seq-prog-fill" style="height:100%;background:linear-gradient(90deg,#0891b2,#67e8f9);width:0%;transition:width .3s"></div></div>
+          </div>
+        </div>
+      </div>
+      <!-- Right: results -->
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:8px 14px;border-bottom:1px solid #374151;display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;color:#6b7280" id="seq-result-info">Run analysis to see results</span>
+          <button class="act-btn" style="margin-left:auto" id="seq-export-btn" onclick="exportSeqCSV()" style="display:none">⬇ Export CSV</button>
+        </div>
+        <div style="flex:1;overflow-y:auto" id="seq-results-body">
+          <div class="log-empty">Select frames and run "Analyze All Frames"</div>
+        </div>
+        <canvas id="seq-chart" height="90" style="width:100%;background:#0f172a;flex-shrink:0;display:none"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Log modal -->
+<div class="log-backdrop" id="log-backdrop" onclick="closeLogOnBd(event)">
+  <div class="log-panel" onclick="event.stopPropagation()">
+    <div class="log-header">
+      <h3>📋 Measurements Log</h3>
+      <span style="font-size:10px;color:#6b7280" id="log-count">0 entries</span>
+      <div class="log-header-btns">
+        <button class="act-btn" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="act-btn" onclick="clearLog()">🗑 Clear All</button>
+        <button class="act-btn" onclick="closeLog()">✕ Close</button>
+      </div>
+    </div>
+    <div class="log-body" id="log-body">
+      <div class="log-empty">No measurements saved yet.<br>Run an analysis and click "＋ Save to Log".</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// ── Config ────────────────────────────────────────────────────────────────
+const SIGMAS=[
+  {l:'2+', s:[2,4,6,8,10,12,14,16,18]},
+  {l:'4+', s:[4,6,8,10,12,14,16,18]},
+  {l:'6+', s:[6,8,10,12,14,16,18]},
+  {l:'8+', s:[8,10,12,14,16,18]},
+  {l:'10+',s:[10,12,14,16,18]},
+  {l:'12+',s:[12,14,16,18]},
+  {l:'14+',s:[14,16,18]},
+  {l:'16+',s:[16,18,20,22]},
+];
+const MINSIZES=[10,50,100,200,500,1000,2000,3000,5000,8000,15000,30000,60000];
+
+// Load defaults from localStorage
+let curSI=parseInt(localStorage.getItem('va_si')??'4');
+let curMI=parseInt(localStorage.getItem('va_mi')??'5');
+
+let py=null,images=[],curI=-1,busy=false;
+let runSelected=new Set();  // indices selected for batch run
+
+function toggleRunSelect(i,checked){
+  if(checked)runSelected.add(i);else runSelected.delete(i);
+  updateRunBtn();
+}
+function sidebarSelAll(v){
+  runSelected.clear();
+  if(v) images.forEach((_,i)=>runSelected.add(i));
+  renderList();updateRunBtn();
+}
+
+function updateRunBtn(){
+  const btn=document.getElementById('run-btn');
+  if(btn){
+    if(runSelected.size>1) btn.textContent=`▶ Run Selected (${runSelected.size})`;
+    else btn.textContent='▶ Run';
+  }
+  const slb=document.getElementById('save-log-btn');
+  if(slb){
+    if(runSelected.size>1) slb.textContent=`＋ Save Selected to Log (${runSelected.size})`;
+    else slb.textContent='＋ Save to Log';
+  }
+}
+let roi=null,drawingROI=false,hoverPt=null;
+let roiClipboard=null;   // copied ROI points
+let logEntries=[];
+let lastResult=null;
+
+// ── Python ─────────────────────────────────────────────────────────────────
+const PY=`
+import numpy as np, io, base64, json
+from PIL import Image, ImageDraw
+from skimage.filters import frangi, threshold_otsu
+from skimage.morphology import remove_small_objects, binary_closing, disk
+from skimage import measure
+
+_imgs={}; _vmaps={}
+
+def _b64png(rgba):
+    buf=io.BytesIO(); Image.fromarray(rgba,'RGBA').save(buf,format='PNG')
+    return base64.b64encode(buf.getvalue()).decode()
+
+def _thumb(gray,size=200):
+    h,w=gray.shape; s=size/max(h,w)
+    img=Image.fromarray(gray).resize((max(1,int(w*s)),max(1,int(h*s))),Image.LANCZOS)
+    buf=io.BytesIO(); img.save(buf,format='JPEG',quality=75)
+    return base64.b64encode(buf.getvalue()).decode()
+
+def load_img(name,fb_js):
+    arr=np.array(Image.open(io.BytesIO(bytes(fb_js))).convert('L'))
+    _imgs[name]=arr
+    return json.dumps({'thumb':_thumb(arr),'w':int(arr.shape[1]),'h':int(arr.shape[0])})
+
+def make_vmap(name,sk):
+    arr=_imgs[name]; inv=(255-arr.astype(np.float32))/255.0
+    _vmaps[(name,sk)]=frangi(inv,sigmas=json.loads(sk),black_ridges=False).astype(np.float32)
+    return 'ok'
+
+def _roi_mask(h,w,roi_json):
+    if not roi_json: return np.ones((h,w),dtype=bool)
+    pts=json.loads(roi_json)
+    if len(pts)<3: return np.ones((h,w),dtype=bool)
+    mask=Image.new('L',(w,h),0)
+    ImageDraw.Draw(mask).polygon([(float(p['x']),float(p['y'])) for p in pts],fill=255)
+    return np.array(mask)>0
+
+
+def run_filters_with_extras(name,sk,min_size,px_um,roi_json='',paint_json='',guide_strength=0.0):
+    vmap=_vmaps[(name,sk)]; orig=_imgs[name]; h,w=orig.shape
+    roi=_roi_mask(h,w,roi_json); nz=vmap[vmap>0]
+    if len(nz)<10:
+        empty=np.zeros((h,w,4),dtype=np.uint8)
+        ov=np.stack([orig,orig,orig,np.full_like(orig,255)],axis=-1)
+        return json.dumps({'fraction':0.0,'vessel_um2':0.0,'vessel_mm2':0.0,'n_segments':0,'vmap_b64':_b64png(empty),'overlay_b64':_b64png(ov)})
+    thresh=threshold_otsu(nz)
+    binary=binary_closing(vmap>thresh,disk(4))
+    binary=remove_small_objects(binary,min_size=int(min_size))
+    # Projection-guided fill
+    gs=float(guide_strength)
+    if gs>0:
+        sk_key=(name,sk); proj_key=('__proj__',sk)
+        if proj_key in _vmaps:
+            pv=_vmaps[proj_key]; pmax=pv.max()
+            if pmax>0:
+                pnorm=pv/pmax
+                # Where projection is confident above guide threshold, relax frame threshold
+                guide_thresh=thresh*(1.0-gs*0.7)
+                weak_binary=vmap>guide_thresh
+                guide_mask=(pnorm>gs*0.4)&weak_binary
+                guide_mask=binary_closing(guide_mask,disk(3))
+                guide_mask=remove_small_objects(guide_mask,min_size=max(10,int(min_size)//4))
+                binary=binary|guide_mask
+    tmask=binary_closing(orig<250,disk(10))&roi; binary=binary&tmask
+    # Manual paint mask (strokes applied in order; erase strokes clear)
+    if paint_json:
+        pts=json.loads(paint_json)
+        pmask=Image.new('L',(w,h),0)
+        pdraw=ImageDraw.Draw(pmask)
+        for p in pts:
+            r=int(p['r']); x=int(p['x']); y=int(p['y'])
+            fill=0 if p.get('erase') else 255
+            pdraw.ellipse([x-r,y-r,x+r,y+r],fill=fill)
+        binary=binary|(np.array(pmask)>0)
+    tpx=int(tmask.sum()); vpx=int(binary.sum())
+    frac=vpx/tpx*100 if tpx>0 else 0.0
+    n=len(measure.regionprops(measure.label(binary)))
+    px2=float(px_um)**2
+    vm=vmap.copy(); vm[~binary]=0; mx=vm.max()
+    vn=(vm/mx*255).astype(np.int32) if mx>0 else np.zeros((h,w),np.int32)
+    r=np.clip(vn*3,0,255).astype(np.uint8); g=np.clip(vn*3-255,0,255).astype(np.uint8)
+    b=np.clip(vn*3-510,0,255).astype(np.uint8)
+    vrgba=np.stack([r,g,b,np.full((h,w),255,np.uint8)],axis=-1)
+    ov=np.stack([orig,orig,orig,np.full_like(orig,255)],axis=-1).copy(); ov[binary]=[255,40,40,255]
+    return json.dumps({'fraction':round(float(frac),2),'vessel_um2':round(float(vpx*px2),1),
+        'vessel_mm2':round(float(vpx*px2/1e6),4),'n_segments':n,
+        'vmap_b64':_b64png(vrgba),'overlay_b64':_b64png(ov)})
+
+def apply_sequence_guided(names_json,sk,min_size,px_um,roi_json='',guide_strength=0.0):
+    names=json.loads(names_json); results=[]
+    for name in names:
+        if name not in _imgs: continue
+        if (name,sk) not in _vmaps:
+            arr=_imgs[name]; inv=(255-arr.astype(np.float32))/255.0
+            _vmaps[(name,sk)]=frangi(inv,sigmas=json.loads(sk),black_ridges=False).astype(np.float32)
+        r=json.loads(run_filters_with_extras(name,sk,int(min_size),float(px_um),roi_json,'',float(guide_strength)))
+        results.append({'name':name,'fraction':r['fraction'],'vessel_um2':r['vessel_um2'],
+            'vessel_mm2':r['vessel_mm2'],'n_segments':r['n_segments']})
+    return json.dumps(results)
+
+def build_proj_template(sk, min_size):
+    proj_key=('__proj__',sk)
+    if proj_key not in _vmaps: return json.dumps({'error':'Compute projection first'})
+    pv=_vmaps[proj_key]; nz=pv[pv>0]
+    if len(nz)<10: return json.dumps({'error':'No signal in projection'})
+    thresh=threshold_otsu(nz)
+    pb=binary_closing(pv>thresh,disk(4))
+    pb=remove_small_objects(pb,min_size=int(min_size))
+    # store for later use in guided fill
+    _imgs['__proj_binary__']=pb.astype(np.uint8)*255
+    return json.dumps({'h':int(pb.shape[0]),'w':int(pb.shape[1]),'n_px':int(pb.sum())})
+
+def get_template_overlay(name, sk):
+    if '__proj_binary__' not in _imgs:
+        return json.dumps({'error':'Build projection template first'})
+    orig=_imgs[name]; h,w=orig.shape
+    pb_raw=_imgs['__proj_binary__']
+    # Resize if needed
+    if pb_raw.shape!=(h,w):
+        pb=np.array(Image.fromarray(pb_raw).resize((w,h),Image.NEAREST))>0
+    else:
+        pb=pb_raw>0
+    # Composite: vesselness map + cyan projection overlay
+    if (name,sk) in _vmaps:
+        vm=_vmaps[(name,sk)]; mx=vm.max()
+        vn=(vm/mx*255).astype(np.int32) if mx>0 else np.zeros((h,w),np.int32)
+        r=np.clip(vn*3,0,255).astype(np.uint8)
+        g=np.clip(vn*3-255,0,255).astype(np.uint8)
+        b=np.clip(vn*3-510,0,255).astype(np.uint8)
+    else:
+        r=g=b=np.zeros((h,w),np.uint8)
+    rgba=np.stack([r,g,b,np.full((h,w),255,np.uint8)],axis=-1).copy()
+    # Cyan overlay where projection template is active
+    rgba[pb,0]=np.clip(r[pb].astype(int)+0,0,255).astype(np.uint8)
+    rgba[pb,1]=np.clip(g[pb].astype(int)+160,0,255).astype(np.uint8)
+    rgba[pb,2]=np.clip(b[pb].astype(int)+220,0,255).astype(np.uint8)
+    return json.dumps({'b64':_b64png(rgba)})
+
+def run_filters_template(name, sk, min_size, px_um, roi_json='', paint_json=''):
+    """Like run_filters_with_extras but uses hard projection template mask."""
+    if '__proj_binary__' not in _imgs:
+        return run_filters_with_extras(name,sk,min_size,px_um,roi_json,paint_json,0.0)
+    vmap=_vmaps[(name,sk)]; orig=_imgs[name]; h,w=orig.shape
+    roi=_roi_mask(h,w,roi_json); nz=vmap[vmap>0]
+    if len(nz)<10:
+        empty=np.zeros((h,w,4),dtype=np.uint8)
+        ov=np.stack([orig,orig,orig,np.full_like(orig,255)],axis=-1)
+        return json.dumps({'fraction':0.0,'vessel_um2':0.0,'vessel_mm2':0.0,'n_segments':0,'vmap_b64':_b64png(empty),'overlay_b64':_b64png(ov)})
+    thresh=threshold_otsu(nz)
+    binary=binary_closing(vmap>thresh,disk(4))
+    binary=remove_small_objects(binary,min_size=int(min_size))
+    # Template guided: where template says vessel + frame has any signal → include
+    pb_raw=_imgs['__proj_binary__']
+    pb=np.array(Image.fromarray(pb_raw).resize((w,h),Image.NEAREST))>0 if pb_raw.shape!=(h,w) else pb_raw>0
+    relaxed=vmap>(thresh*0.25)  # very relaxed threshold within template
+    guided=pb&relaxed
+    guided=binary_closing(guided,disk(3))
+    guided=remove_small_objects(guided,min_size=max(10,int(min_size)//6))
+    binary=binary|guided
+    # Paint
+    if paint_json:
+        pts=json.loads(paint_json); pmask=Image.new('L',(w,h),0); pdraw=ImageDraw.Draw(pmask)
+        for p in pts:
+            r=int(p['r']);x=int(p['x']);y=int(p['y']);fill=0 if p.get('erase') else 255
+            pdraw.ellipse([x-r,y-r,x+r,y+r],fill=fill)
+        binary=binary|(np.array(pmask)>0)
+    tmask=binary_closing(orig<250,disk(10))&roi; binary=binary&tmask
+    tpx=int(tmask.sum()); vpx=int(binary.sum())
+    frac=vpx/tpx*100 if tpx>0 else 0.0
+    n=len(measure.regionprops(measure.label(binary)))
+    px2=float(px_um)**2
+    vm=vmap.copy(); vm[~binary]=0; mx=vm.max()
+    vn=(vm/mx*255).astype(np.int32) if mx>0 else np.zeros((h,w),np.int32)
+    r=np.clip(vn*3,0,255).astype(np.uint8); g=np.clip(vn*3-255,0,255).astype(np.uint8); b=np.clip(vn*3-510,0,255).astype(np.uint8)
+    vrgba=np.stack([r,g,b,np.full((h,w),255,np.uint8)],axis=-1)
+    ov=np.stack([orig,orig,orig,np.full_like(orig,255)],axis=-1).copy(); ov[binary]=[255,40,40,255]
+    return json.dumps({'fraction':round(float(frac),2),'vessel_um2':round(float(vpx*px2),1),
+        'vessel_mm2':round(float(vpx*px2/1e6),4),'n_segments':n,'vmap_b64':_b64png(vrgba),'overlay_b64':_b64png(ov)})
+
+def free_vmaps(names_json):
+    names=json.loads(names_json)
+    freed=0
+    keys=[k for k in list(_vmaps.keys()) if k[0] in names]
+    for k in keys:
+        del _vmaps[k]
+        freed+=1
+    import gc; gc.collect()
+    return json.dumps({'freed':freed,'remaining':len(_vmaps)})
+
+def reset_sequence():
+    _imgs.pop('__proj__', None)
+    keys_to_del = [k for k in _vmaps if k[0] == '__proj__']
+    for k in keys_to_del: del _vmaps[k]
+    return 'ok'
+
+def compute_projection(names_json, method, sk=''):
+    names=json.loads(names_json)
+    arrays=[_imgs[n] for n in names if n in _imgs]
+    if not arrays: return json.dumps({'error':'No images loaded'})
+    n_loaded=len(arrays)
+    stack=np.stack(arrays,axis=0).astype(np.float32)
+    if method=='median':
+        proj=np.median(stack,axis=0).astype(np.uint8)
+    elif method=='min':
+        proj=stack.min(axis=0).astype(np.uint8)
+    elif method=='std':
+        s=stack.std(axis=0); mx=s.max()
+        proj=(s/mx*255).astype(np.uint8) if mx>0 else s.astype(np.uint8)
+    elif method=='max_v':
+        # Maximum vesselness projection — uses pre-computed vmaps
+        if not sk: return json.dumps({'error':'Sigma key required for max vesselness'})
+        vmaps_list=[_vmaps[(n,sk)] for n in names if (n,sk) in _vmaps]
+        if not vmaps_list: return json.dumps({'error':'Compute vmaps first (run Analyze All Frames once, or switch to another method)'})
+        max_v=np.stack(vmaps_list,axis=0).max(axis=0)
+        _vmaps[('__proj__',sk)]=max_v.astype(np.float32)
+        mx=max_v.max()
+        proj=(max_v/mx*255).astype(np.uint8) if mx>0 else max_v.astype(np.uint8)
+        _imgs['__proj__']=proj
+        return json.dumps({'thumb':_thumb(proj),'w':int(proj.shape[1]),'h':int(proj.shape[0]),'n':len(vmaps_list),'vmap_ready':True})
+    else:
+        proj=stack.mean(axis=0).astype(np.uint8)
+    _imgs['__proj__']=proj
+    return json.dumps({'thumb':_thumb(proj),'w':int(proj.shape[1]),'h':int(proj.shape[0]),'n':n_loaded,'vmap_ready':False})
+
+def auto_optimize(sk,roi_json=''):
+    name='__proj__'
+    if name not in _imgs: return json.dumps({'error':'Compute projection first'})
+    if (name,sk) not in _vmaps:
+        arr=_imgs[name]; inv=(255-arr.astype(np.float32))/255.0
+        _vmaps[(name,sk)]=frangi(inv,sigmas=json.loads(sk),black_ridges=False).astype(np.float32)
+    vmap=_vmaps[(name,sk)]; orig=_imgs[name]
+    roi=_roi_mask(*orig.shape,roi_json)
+    tmask=binary_closing(orig<250,disk(10))&roi
+    nz=vmap[vmap>0]
+    if len(nz)<10: return json.dumps({'error':'No vessel signal in projection'})
+    thresh=threshold_otsu(nz)
+    base_binary=binary_closing(vmap>thresh,disk(4))
+    test_sizes=[10,50,100,200,300,500,750,1000,1500,2000,3000,5000,8000,15000,30000]
+    areas=[]
+    for ms in test_sizes:
+        b=remove_small_objects(base_binary.copy(),min_size=ms)&tmask
+        areas.append(int(b.sum()))
+    arr_a=np.array(areas,dtype=float)
+    # Elbow: where relative drop first stays below 8%
+    elbow_idx=len(test_sizes)-1
+    if arr_a[0]>0:
+        drops=np.abs(np.diff(arr_a))/(arr_a[:-1]+1)
+        for i,d in enumerate(drops):
+            if d<0.08: elbow_idx=i+1; break
+    return json.dumps({'test_sizes':test_sizes,'areas':[int(a) for a in areas],
+        'recommended_min_size':test_sizes[elbow_idx],'elbow_idx':elbow_idx})
+
+def apply_sequence(names_json,sk,min_size,px_um,roi_json=''):
+    names=json.loads(names_json); results=[]
+    for name in names:
+        if name not in _imgs: continue
+        if (name,sk) not in _vmaps:
+            arr=_imgs[name]; inv=(255-arr.astype(np.float32))/255.0
+            _vmaps[(name,sk)]=frangi(inv,sigmas=json.loads(sk),black_ridges=False).astype(np.float32)
+        r=json.loads(run_filters(name,sk,int(min_size),float(px_um),roi_json))
+        results.append({'name':name,'fraction':r['fraction'],'vessel_um2':r['vessel_um2'],
+            'vessel_mm2':r['vessel_mm2'],'n_segments':r['n_segments']})
+    return json.dumps(results)
+
+def run_filters(name,sk,min_size,px_um,roi_json=''):
+    vmap=_vmaps[(name,sk)]; orig=_imgs[name]; h,w=orig.shape
+    roi=_roi_mask(h,w,roi_json); nz=vmap[vmap>0]
+    if len(nz)<10:
+        empty=np.zeros((h,w,4),dtype=np.uint8)
+        ov=np.stack([orig,orig,orig,np.full_like(orig,255)],axis=-1)
+        return json.dumps({'fraction':0.0,'vessel_um2':0.0,'vessel_mm2':0.0,'n_segments':0,'vmap_b64':_b64png(empty),'overlay_b64':_b64png(ov)})
+    thresh=threshold_otsu(nz); binary=vmap>thresh
+    binary=binary_closing(binary,disk(4))
+    binary=remove_small_objects(binary,min_size=int(min_size))
+    tmask=binary_closing(orig<250,disk(10))&roi; binary=binary&tmask
+    tpx=int(tmask.sum()); vpx=int(binary.sum())
+    frac=vpx/tpx*100 if tpx>0 else 0.0
+    n=len(measure.regionprops(measure.label(binary)))
+    px2=float(px_um)**2
+    vm=vmap.copy(); vm[~binary]=0; mx=vm.max()
+    vn=(vm/mx*255).astype(np.int32) if mx>0 else np.zeros((h,w),np.int32)
+    r=np.clip(vn*3,0,255).astype(np.uint8); g=np.clip(vn*3-255,0,255).astype(np.uint8); b=np.clip(vn*3-510,0,255).astype(np.uint8)
+    vrgba=np.stack([r,g,b,np.full((h,w),255,np.uint8)],axis=-1)
+    ov=np.stack([orig,orig,orig,np.full_like(orig,255)],axis=-1).copy(); ov[binary]=[255,40,40,255]
+    return json.dumps({'fraction':round(float(frac),2),'vessel_um2':round(float(vpx*px2),1),
+        'vessel_mm2':round(float(vpx*px2/1e6),4),'n_segments':n,'vmap_b64':_b64png(vrgba),'overlay_b64':_b64png(ov)})
+`;
+
+// ── Pyodide init ───────────────────────────────────────────────────────────
+async function initPy(){
+  const msg=document.getElementById('init-msg'),fill=document.getElementById('pfill');
+  try{
+    msg.textContent='Loading Pyodide runtime…'; fill.style.width='15%';
+    py=await loadPyodide();
+    fill.style.width='40%'; msg.textContent='Loading scikit-image & Pillow…';
+    await py.loadPackage(['scikit-image','pillow','numpy']);
+    fill.style.width='85%'; msg.textContent='Initialising…';
+    await py.runPythonAsync(PY);
+    fill.style.width='100%'; msg.textContent='Ready!';
+    await new Promise(r=>setTimeout(r,350));
+    document.getElementById('init-overlay').style.display='none';
+    document.getElementById('app').style.display='flex';
+    initCanvases();
+    // Restore pixel size default
+    const px=localStorage.getItem('va_px');
+    if(px) document.getElementById('px-size').value=px;
+  }catch(e){msg.textContent='Error: '+e.message;msg.style.color='#f87171';console.error(e);}
+}
+
+// ── Save / load defaults ───────────────────────────────────────────────────
+function saveDefaults(){
+  localStorage.setItem('va_si',curSI);
+  localStorage.setItem('va_mi',curMI);
+  localStorage.setItem('va_px',document.getElementById('px-size').value);
+  toast('⭐ Settings saved as default');
+}
+
+// ── Buttons ────────────────────────────────────────────────────────────────
+function mkBtns(){
+  const sb=document.getElementById('sigma-btns');
+  SIGMAS.forEach(({l},i)=>{const b=document.createElement('button');b.className='fb'+(i===curSI?' on':'');b.textContent=l;b.onclick=()=>{curSI=i;upBtns();analyze();};sb.appendChild(b);});
+  const mb=document.getElementById('minsize-btns');
+  MINSIZES.forEach((sz,i)=>{const b=document.createElement('button');b.className='fb'+(i===curMI?' on':'');b.textContent=sz>=1000?(sz/1000)+'k':sz;b.onclick=()=>{curMI=i;upBtns();analyze();};mb.appendChild(b);});
+}
+function upBtns(){
+  document.querySelectorAll('#sigma-btns .fb').forEach((b,i)=>b.classList.toggle('on',i===curSI));
+  document.querySelectorAll('#minsize-btns .fb').forEach((b,i)=>b.classList.toggle('on',i===curMI));
+}
+
+// ── Canvases / ROI ─────────────────────────────────────────────────────────
+function initCanvases(){
+  // ov-canvas (ROI outline mirror) resizes with ov-wrap — not used for drawing now
+  // roi-canvas and paint-canvas are in ov-wrap
+  const resize=(wrap,canvas)=>new ResizeObserver(()=>{canvas.width=wrap.offsetWidth;canvas.height=wrap.offsetHeight;drawROI(canvas,true);}).observe(wrap);
+  resize(document.getElementById('ov-wrap'),document.getElementById('roi-canvas'));
+  resize(document.getElementById('ov-wrap'),document.getElementById('ov-canvas'));
+  const rc=document.getElementById('roi-canvas');
+  rc.addEventListener('click',onROIClick);
+  rc.addEventListener('dblclick',onROIDblClick);
+  rc.addEventListener('mousemove',onROIMove);
+  rc.addEventListener('mouseleave',()=>{hoverPt=null;drawROI(rc,true);});
+  initPaintCanvas();
+}
+
+function getT(wrapId,imgId){
+  const wrap=document.getElementById(wrapId),img=document.getElementById(imgId);
+  const cw=wrap.offsetWidth,ch=wrap.offsetHeight,iw=img.naturalWidth||cw,ih=img.naturalHeight||ch;
+  const ia=iw/ih,ca=cw/ch;let rw,rh,ox,oy;
+  if(ia>ca){rw=cw;rh=cw/ia;ox=0;oy=(ch-rh)/2;}else{rh=ch;rw=ch*ia;ox=(cw-rw)/2;oy=0;}
+  return{ox,oy,sx:rw/iw,sy:rh/ih};
+}
+function c2i(mx,my,t){return{x:(mx-t.ox)/t.sx,y:(my-t.oy)/t.sy};}
+function i2c(ix,iy,t){return{x:t.ox+ix*t.sx,y:t.oy+iy*t.sy};}
+
+function drawROI(canvas,withHover){
+  const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(!roi||!roi.points.length)return;
+  const t=getT('ov-wrap','overlay-img');
+  const pts=roi.points.map(p=>i2c(p.x,p.y,t));
+  ctx.strokeStyle='#34d399';ctx.lineWidth=2;ctx.setLineDash([]);ctx.fillStyle='rgba(52,211,153,.12)';
+  ctx.beginPath();pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+  if(roi.closed){ctx.closePath();ctx.fill();}ctx.stroke();
+  if(withHover&&drawingROI&&hoverPt&&pts.length){
+    const last=pts[pts.length-1];
+    ctx.strokeStyle='rgba(52,211,153,.4)';ctx.setLineDash([5,4]);
+    ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(hoverPt.x,hoverPt.y);ctx.stroke();ctx.setLineDash([]);
+    if(pts.length>=3){const f=pts[0];if(Math.sqrt((f.x-hoverPt.x)**2+(f.y-hoverPt.y)**2)<14){ctx.strokeStyle='#34d399';ctx.lineWidth=2;ctx.beginPath();ctx.arc(f.x,f.y,8,0,Math.PI*2);ctx.stroke();}}
+  }
+  ctx.fillStyle='#34d399';pts.forEach((p,i)=>{ctx.beginPath();ctx.arc(p.x,p.y,i===0?5:3.5,0,Math.PI*2);ctx.fill();});
+}
+function syncOv(){/* ROI now lives on overlay panel — no sync needed */}
+
+function onROIClick(e){
+  if(!drawingROI)return;
+  const rc=document.getElementById('roi-canvas'),rect=rc.getBoundingClientRect();
+  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  const t=getT('ov-wrap','overlay-img'),ip=c2i(mx,my,t);
+  if(!roi)roi={points:[],closed:false};
+  if(roi.points.length>=3){const fp=i2c(roi.points[0].x,roi.points[0].y,t);if(Math.sqrt((fp.x-mx)**2+(fp.y-my)**2)<14){closeROIPoly();return;}}
+  roi.points.push({x:ip.x,y:ip.y});drawROI(rc,true);syncOv();
+}
+function onROIDblClick(e){if(!drawingROI||!roi||roi.points.length<3)return;roi.points.pop();closeROIPoly();}
+function onROIMove(e){
+  if(!drawingROI||!roi)return;
+  const rc=document.getElementById('roi-canvas'),rect=rc.getBoundingClientRect();
+  hoverPt={x:e.clientX-rect.left,y:e.clientY-rect.top};drawROI(rc,true);
+}
+
+function closeROIPoly(){
+  roi.closed=true;drawingROI=false;hoverPt=null;
+  document.getElementById('roi-canvas').classList.remove('draw-active');
+  document.getElementById('roi-draw-btn').classList.remove('roi-on');
+  document.getElementById('roi-draw-btn').textContent='✏ Draw ROI';
+  document.getElementById('roi-clear-btn').style.display='';
+  document.getElementById('roi-copy-btn').style.display='';
+  const h=document.getElementById('ov-wrap').querySelector('.roi-hint');if(h)h.remove();
+  drawROI(document.getElementById('roi-canvas'),false);syncOv();analyze();
+}
+
+function toggleDraw(){
+  if(roi&&roi.closed){clearROI();return;}
+  drawingROI=!drawingROI;
+  if(drawingROI){
+    roi=null;
+    document.getElementById('roi-canvas').classList.add('draw-active');
+    document.getElementById('roi-draw-btn').classList.add('roi-on');
+    document.getElementById('roi-draw-btn').textContent='⏹ Stop';
+    const wrap=document.getElementById('ov-wrap');
+    if(!wrap.querySelector('.roi-hint')){const h=document.createElement('div');h.className='roi-hint';h.textContent='Click to add points · Double-click or snap to close';wrap.appendChild(h);}
+    drawROI(document.getElementById('roi-canvas'),true);
+  }else{
+    document.getElementById('roi-canvas').classList.remove('draw-active');
+    document.getElementById('roi-draw-btn').classList.remove('roi-on');
+    document.getElementById('roi-draw-btn').textContent='✏ Draw ROI';
+    const h=document.getElementById('ov-wrap').querySelector('.roi-hint');if(h)h.remove();
+    roi=null;drawROI(document.getElementById('roi-canvas'),false);syncOv();
+  }
+}
+
+function clearROI(){
+  roi=null;drawingROI=false;hoverPt=null;
+  document.getElementById('roi-canvas').classList.remove('draw-active');
+  document.getElementById('roi-draw-btn').classList.remove('roi-on');
+  document.getElementById('roi-draw-btn').textContent='✏ Draw ROI';
+  ['roi-clear-btn','roi-copy-btn'].forEach(id=>document.getElementById(id).style.display='none');
+  const h=document.getElementById('ov-wrap').querySelector('.roi-hint');if(h)h.remove();
+  ['roi-canvas','ov-canvas'].forEach(id=>{const c=document.getElementById(id);c.getContext('2d').clearRect(0,0,c.width,c.height);});
+  analyze();
+}
+
+// ── ROI copy / paste ───────────────────────────────────────────────────────
+function copyROI(){
+  if(!roi||!roi.closed||roi.points.length<3)return;
+  roiClipboard=JSON.parse(JSON.stringify(roi.points));
+  document.getElementById('roi-paste-btn').style.display='';
+  toast('📋 ROI copied — switch image and click Paste ROI');
+}
+
+function pasteROI(){
+  if(!roiClipboard||roiClipboard.length<3){toast('No ROI in clipboard');return;}
+  roi={points:JSON.parse(JSON.stringify(roiClipboard)),closed:true};
+  drawingROI=false;
+  document.getElementById('roi-draw-btn').textContent='✏ Draw ROI';
+  document.getElementById('roi-draw-btn').classList.remove('roi-on');
+  document.getElementById('roi-canvas').classList.remove('draw-active');
+  document.getElementById('roi-clear-btn').style.display='';
+  document.getElementById('roi-copy-btn').style.display='';
+  const h=document.getElementById('ov-wrap').querySelector('.roi-hint');if(h)h.remove();
+  requestAnimationFrame(()=>{drawROI(document.getElementById('roi-canvas'),false);syncOv();});
+  analyze();
+  toast('📌 ROI pasted');
+}
+
+// ── Files ──────────────────────────────────────────────────────────────────
+document.getElementById('file-input').addEventListener('change',async e=>{for(const f of e.target.files)await addImg(f);e.target.value='';});
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',async e=>{e.preventDefault();for(const f of e.dataTransfer.files)if(f.type.startsWith('image/')||/\.tiff?$/i.test(f.name))await addImg(f);});
+
+async function addImg(file){
+  const bytes=new Uint8Array(await file.arrayBuffer());
+  const idx=images.length;
+  images.push({name:file.name,bytes,thumb:null,loaded:false,vmapDone:{}});
+  seqSelected.add(idx);
+  runSelected.add(idx);
+  renderList();updateRunBtn();
+  if(images.length===1){curI=0;renderList();}
+}
+
+function removeImg(i,e){
+  e.stopPropagation();
+  images.splice(i,1);
+  // Rebuild runSelected with shifted indices
+  const newSel=new Set();
+  runSelected.forEach(idx=>{if(idx<i)newSel.add(idx);else if(idx>i)newSel.add(idx-1);});
+  runSelected=newSel;
+  const newSeq=new Set();
+  seqSelected.forEach(idx=>{if(idx<i)newSeq.add(idx);else if(idx>i)newSeq.add(idx-1);});
+  seqSelected=newSeq;
+  if(images.length===0){curI=-1;clearDisplay();}
+  else{if(curI>=images.length)curI=images.length-1;}
+  renderList();updateRunBtn();
+  if(curI>=0) selectImg(curI);
+}
+
+function clearDisplay(){
+  ['vmap-img','overlay-img'].forEach(id=>{const el=document.getElementById(id);el.src='';el.style.display='none';});
+  ['hint-vmap','hint-ov'].forEach(id=>document.getElementById(id).style.display='');
+  ['m-frac','m-um2','m-mm2','m-segs'].forEach(id=>document.getElementById(id).textContent='—');
+  setStatus('Upload an image to begin');
+}
+
+function renderList(){
+  const el=document.getElementById('img-list');
+  if(!images.length){el.innerHTML='<div style="padding:12px;font-size:11px;color:#4b5563;text-align:center">No images</div>';return;}
+  el.innerHTML='';
+  images.forEach((img,i)=>{
+    const d=document.createElement('div');d.className='img-item'+(i===curI?' active':'');
+    const thumb=img.thumb?`<img class="img-thumb" src="data:image/jpeg;base64,${img.thumb}">`:`<div class="img-thumb" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:#4b5563">…</div>`;
+    const chk=runSelected.has(i)?'checked':'';
+    d.innerHTML=`<input type="checkbox" class="img-check" title="Select for batch run" ${chk} onclick="event.stopPropagation();toggleRunSelect(${i},this.checked)">${thumb}<div class="img-name" title="${img.name}">${img.name}</div><button class="img-remove" title="Remove image">✕</button>`;
+    d.querySelector('.img-remove').addEventListener('click',e=>removeImg(i,e));
+    d.addEventListener('click',()=>selectImg(i));
+    el.appendChild(d);
+  });
+}
+
+function selectImg(i){
+  curI=i; renderList();
+  document.getElementById('roi-paste-btn').style.display=roiClipboard?'':'none';
+  const img=images[i];
+  if(img&&img.cachedResult){
+    // Restore this image's last result immediately
+    const r=img.cachedResult;
+    showImg('vmap-img','hint-vmap',r.vmap_b64);
+    showImg('overlay-img','hint-ov',r.overlay_b64);
+    document.getElementById('m-frac').textContent=r.fraction+'%';
+    document.getElementById('m-um2').textContent=r.vessel_um2.toLocaleString();
+    document.getElementById('m-mm2').textContent=r.vessel_mm2;
+    document.getElementById('m-segs').textContent=r.n_segments;
+    setPanelTitles(img.name);
+    setStatus(`[cached] ${img.name}  ·  click ▶ Run to re-analyze`);
+  } else {
+    clearDisplay();
+  }
+  setTimeout(()=>redrawPaint(),50);
+  document.getElementById('paint-clear-btn').style.display=(images[i]&&images[i].paintStrokes&&images[i].paintStrokes.length)?'':'none';
+}
+
+// ── Analysis ───────────────────────────────────────────────────────────────
+async function runBtn(){
+  if(runSelected.size>1){
+    // Batch run all selected
+    const indices=Array.from(runSelected).sort((a,b)=>a-b);
+    for(const idx of indices){
+      if(idx>=images.length)continue;
+      curI=idx;renderList();
+      await analyze();
+      // Small delay to let UI breathe
+      await new Promise(r=>setTimeout(r,50));
+    }
+    toast(`✓ Batch complete: ${indices.length} images analyzed`);
+  }else{
+    analyze();
+  }
+}
+
+async function analyze(){
+  if(curI<0||!py||busy)return;
+  if(images[curI]&&images[curI].name==='__proj__'){setStatus('⚠ Projection is not a real image — select a frame');return;}
+  busy=true;
+  const img=images[curI];
+  const sk=JSON.stringify(SIGMAS[curSI].s);
+  const ms=MINSIZES[curMI];
+  const pxUm=parseFloat(document.getElementById('px-size').value)||0.1;
+  const roiJson=(roi&&roi.closed&&roi.points.length>=3)?JSON.stringify(roi.points):'';
+  showComp(true);
+  try{
+    if(!img.loaded){setStatus('<span class="sp"></span> Loading image…');py.globals.set('_fb',img.bytes);py.globals.set('_nm',img.name);const r=JSON.parse(await py.runPythonAsync('load_img(_nm,_fb)'));img.thumb=r.thumb;img.loaded=true;renderList();}
+    if(!img.vmapDone[sk]){setStatus(`<span class="sp"></span> Computing vesselness (sigmas ${SIGMAS[curSI].l})… first time ~20–40 s`);py.globals.set('_nm',img.name);py.globals.set('_sk',sk);await py.runPythonAsync('make_vmap(_nm,_sk)');img.vmapDone[sk]=true;}
+    setStatus('<span class="sp"></span> Applying filters…');
+    const paintJson=(img.paintStrokes&&img.paintStrokes.length)?JSON.stringify(img.paintStrokes):'';
+    py.globals.set('_nm',img.name);py.globals.set('_sk',sk);py.globals.set('_ms',ms);py.globals.set('_px',pxUm);py.globals.set('_roi',roiJson);
+    py.globals.set('_paint',paintJson);py.globals.set('_gs',0.0);
+    const pyFunc=img.projTemplateActive?'run_filters_template(_nm,_sk,_ms,_px,_roi,_paint)':'run_filters_with_extras(_nm,_sk,_ms,_px,_roi,_paint,_gs)';
+    const res=JSON.parse(await py.runPythonAsync(pyFunc));
+    showImg('vmap-img','hint-vmap',res.vmap_b64);
+    showImg('overlay-img','hint-ov',res.overlay_b64);
+    document.getElementById('m-frac').textContent=res.fraction+'%';
+    document.getElementById('m-um2').textContent=res.vessel_um2.toLocaleString();
+    document.getElementById('m-mm2').textContent=res.vessel_mm2;
+    document.getElementById('m-segs').textContent=res.n_segments;
+    setPanelTitles(img.name);
+    // Cache result in image object so switching back restores it instantly
+    img.cachedResult=res;
+    lastResult={file:img.name,sigma:SIGMAS[curSI].l,minSize:ms,pxUm,roi:roiJson?'Yes':'No',...res};
+    setStatus(`✓ ${img.name}  ·  sigmas ${SIGMAS[curSI].l}  ·  min ${ms}px  ·  ${pxUm} µm/px${roiJson?' · ROI':''}  ·  ${res.n_segments} segments`);
+    requestAnimationFrame(()=>{drawROI(document.getElementById('roi-canvas'),false);syncOv();});
+  }catch(e){
+    const msg=e.message||'';
+    if(msg.includes('MemoryError')||msg.includes('allocate')){
+      setStatus('⚠ Out of memory — use Edit → Free Memory to clear vmap cache, then retry');
+      toast('⚠ Out of memory — Edit → Free Memory');
+    }else{
+      setStatus('⚠ '+msg);
+    }
+    console.error(e);
+  }finally{
+    showComp(false);busy=false; // always release lock
+  }
+}
+
+function showImg(imgId,hintId,b64){
+  const img=document.getElementById(imgId),hint=document.getElementById(hintId);
+  img.src=''; // force browser re-render
+  img.src=`data:image/png;base64,${b64}`;
+  img.style.display='block'; hint.style.display='none';
+}
+function setPanelTitles(name){
+  const short=name&&name.length>28?'…'+name.slice(-26):name||'';
+  document.getElementById('ptitle-vmap-name').textContent=short?` [${short}]`:'';
+  document.getElementById('ptitle-ov-name').textContent=short?` [${short}]`:'';
+}
+function clearDisplay(){
+  ['vmap-img','overlay-img'].forEach(id=>{const el=document.getElementById(id);el.src='';el.style.display='none';});
+  ['hint-vmap','hint-ov'].forEach(id=>document.getElementById(id).style.display='');
+  ['m-frac','m-um2','m-mm2','m-segs'].forEach(id=>document.getElementById(id).textContent='—');
+  setPanelTitles('');
+  setStatus('Select an image then click ▶ Run');
+}
+function showComp(on){['comp-vmap','comp-ov'].forEach(id=>{document.getElementById(id).style.display=on?'flex':'none';});}
+function setStatus(h){document.getElementById('status').innerHTML=h;}
+
+// ── Downloads ─────────────────────────────────────────────────────────────
+function toggleDL(id){const dd=document.getElementById(id);document.querySelectorAll('.dl-dropdown').forEach(d=>{if(d.id!==id)d.classList.remove('open');});dd.classList.toggle('open');}
+document.addEventListener('click',e=>{if(!e.target.closest('.dl-wrap'))document.querySelectorAll('.dl-dropdown').forEach(d=>d.classList.remove('open'));});
+
+function downloadImg(imgId,fmt,name){
+  const img=document.getElementById(imgId);if(!img.src||img.style.display==='none')return;
+  const base=(images[curI]?images[curI].name.replace(/\.[^.]+$/,'')+'_':'')+name;
+  if(fmt==='png'){const a=document.createElement('a');a.href=img.src;a.download=base+'.png';a.click();}
+  else{const canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;const ctx=canvas.getContext('2d');ctx.fillStyle='#000';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0);const a=document.createElement('a');a.href=canvas.toDataURL('image/jpeg',.95);a.download=base+'.jpg';a.click();}
+}
+
+// ── Copy metrics ──────────────────────────────────────────────────────────
+function copyMetrics(){
+  const vals=['m-frac','m-um2','m-mm2','m-segs'].map(id=>document.getElementById(id).textContent);
+  navigator.clipboard.writeText(vals.join('\t')).then(()=>{
+    const btn=document.getElementById('copy-btn');btn.textContent='✓ Copied!';setTimeout(()=>btn.textContent='📋 Copy',1800);
+  });
+}
+
+// ── Log ───────────────────────────────────────────────────────────────────
+function saveToLog(){
+  if(!lastResult){alert('Run an analysis first.');return;}
+  logEntries.push({id:Date.now(),time:new Date().toLocaleTimeString(),...lastResult});
+  renderLog();openLog();toast('✓ Saved to log');
+}
+
+function saveToLogBtn(){
+  // If multiple selected AND they have cached results, save all selected
+  const sel=Array.from(runSelected).filter(i=>i<images.length&&images[i].cachedResult);
+  if(sel.length>1){
+    let saved=0;
+    sel.forEach(i=>{
+      const img=images[i];
+      const r=img.cachedResult;
+      const pxUm=parseFloat(document.getElementById('px-size').value)||0.1;
+      logEntries.push({
+        id:Date.now()+i,
+        time:new Date().toLocaleTimeString(),
+        file:img.name,
+        sigma:SIGMAS[curSI].l,
+        minSize:MINSIZES[curMI],
+        pxUm,
+        roi:'—',
+        fraction:r.fraction,
+        vessel_um2:r.vessel_um2,
+        vessel_mm2:r.vessel_mm2,
+        n_segments:r.n_segments,
+        vmap_b64:r.vmap_b64,
+        overlay_b64:r.overlay_b64
+      });
+      saved++;
+    });
+    renderLog();openLog();
+    toast(`✓ Saved ${saved} images to log`);
+  } else {
+    // Fall back to single save
+    saveToLog();
+  }
+}
+function openLog(){document.getElementById('log-backdrop').classList.add('open');renderLog();}
+function closeLog(){document.getElementById('log-backdrop').classList.remove('open');}
+function closeLogOnBd(e){if(e.target===document.getElementById('log-backdrop'))closeLog();}
+function clearLog(){if(confirm('Clear all log entries?')){logEntries=[];renderLog();}}
+
+function renderLog(){
+  document.getElementById('log-count').textContent=logEntries.length+' entr'+(logEntries.length===1?'y':'ies');
+  const body=document.getElementById('log-body');
+  if(!logEntries.length){body.innerHTML='<div class="log-empty">No measurements saved yet.<br>Run an analysis and click "＋ Save to Log".</div>';return;}
+  body.innerHTML=`<table><thead><tr><th>#</th><th>File</th><th>Time</th><th>Sigma</th><th>Min px</th><th>µm/px</th><th>ROI</th><th>Vessel %</th><th>µm²</th><th>mm²</th><th>Segments</th><th></th></tr></thead>
+  <tbody>${logEntries.map((e,i)=>`<tr><td>${i+1}</td><td title="${e.file}">${e.file.length>18?e.file.slice(0,16)+'…':e.file}</td><td>${e.time}</td><td>${e.sigma}</td><td>${e.minSize}</td><td>${e.pxUm}</td><td>${e.roi}</td><td>${e.fraction}%</td><td>${e.vessel_um2.toLocaleString()}</td><td>${e.vessel_mm2}</td><td>${e.n_segments}</td><td><button class="del-btn" onclick="delLog(${e.id})">✕</button></td></tr>`).join('')}</tbody></table>`;
+}
+function delLog(id){logEntries=logEntries.filter(e=>e.id!==id);renderLog();}
+
+function exportCSV(){
+  if(!logEntries.length){alert('No entries to export.');return;}
+  const hdr=['#','File','Time','Sigma','Min Size (px)','Pixel Size (µm/px)','ROI','Vessel %','Vessel µm²','Vessel mm²','Segments'];
+  const rows=logEntries.map((e,i)=>[i+1,e.file,e.time,e.sigma,e.minSize,e.pxUm,e.roi,e.fraction,e.vessel_um2,e.vessel_mm2,e.n_segments]);
+  const csv=[hdr,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='vessel_analysis.csv';a.click();
+}
+
+// ── Toast ────────────────────────────────────────────────────────────────
+let _toastTimer=null;
+function toast(msg){
+  const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
+  clearTimeout(_toastTimer);_toastTimer=setTimeout(()=>el.classList.remove('show'),2400);
+}
+
+
+
+// ── Paint tool ────────────────────────────────────────────────────────────
+let paintActive=false, paintDragging=false, eraseMode=false;
+let paintCursor={x:0,y:0,visible:false};
+
+function initPaintCanvas(){
+  const pc=document.getElementById('paint-canvas');
+  // All events on paint-canvas itself, with stopPropagation
+  pc.addEventListener('mousedown',e=>{
+    if(!paintActive)return;
+    e.stopPropagation();e.preventDefault();
+    paintDragging=true;
+    doPaintStroke(e);
+  },{capture:true});
+  pc.addEventListener('mousemove',e=>{
+    if(!paintActive)return;
+    e.stopPropagation();
+    const rect=pc.getBoundingClientRect();
+    paintCursor={x:e.clientX-rect.left,y:e.clientY-rect.top,visible:true};
+    if(paintDragging) doPaintStroke(e);
+    drawCursor();
+  },{capture:true});
+  pc.addEventListener('mouseup',e=>{e.stopPropagation();paintDragging=false;},{capture:true});
+  pc.addEventListener('mouseleave',()=>{paintDragging=false;paintCursor.visible=false;drawCursor();});
+}
+
+function doPaintStroke(e){
+  if(curI<0)return;
+  const pc=document.getElementById('paint-canvas');
+  const rect=pc.getBoundingClientRect();
+  // Screen coords (for immediate draw)
+  const sx=e.clientX-rect.left, sy=e.clientY-rect.top;
+  // Scale to canvas internal resolution
+  const cx=sx*(pc.width/rect.width), cy=sy*(pc.height/rect.height);
+  const r=parseInt(document.getElementById('brush-size').value)||14;
+  const cr=r*(pc.width/rect.width); // scaled radius
+  // Draw immediately on canvas
+  const ctx=pc.getContext('2d');
+  if(eraseMode){
+    ctx.globalCompositeOperation='destination-out';
+    ctx.fillStyle='rgba(0,0,0,1)';
+  }else{
+    ctx.globalCompositeOperation='source-over';
+    ctx.fillStyle='rgba(0,255,180,0.55)';
+  }
+  ctx.beginPath();ctx.arc(cx,cy,cr,0,Math.PI*2);ctx.fill();
+  ctx.globalCompositeOperation='source-over';
+  // Store in image coords for Python
+  const t=getT('ov-wrap','overlay-img');
+  const ip=c2i(sx,sy,t);
+  if(!images[curI].paintStrokes)images[curI].paintStrokes=[];
+  images[curI].paintStrokes.push({x:ip.x,y:ip.y,r,erase:eraseMode||undefined});
+  document.getElementById('paint-clear-btn').style.display='';
+}
+
+function drawCursor(){
+  // Cursor drawn on top using roi-canvas (paint-canvas keeps strokes only)
+  // Just update paint-canvas cursor overlay
+  const pc=document.getElementById('paint-canvas');
+  if(!paintActive||!paintCursor.visible)return;
+  // Don't clear whole canvas — just show cursor via CSS cursor property
+}
+
+function redrawPaint(){
+  // Called when switching images — redraw stored strokes from image coords
+  const pc=document.getElementById('paint-canvas');
+  if(!pc)return;
+  const ctx=pc.getContext('2d');
+  ctx.clearRect(0,0,pc.width,pc.height);
+  if(curI<0)return;
+  const img=images[curI];
+  const strokes=(img&&img.paintStrokes)||[];
+  if(!strokes.length)return;
+  const t=getT('ov-wrap','overlay-img');
+  const wrap=document.getElementById('roi-wrap');
+  const scaleX=pc.width/(wrap.offsetWidth||pc.width);
+  const scaleY=pc.height/(wrap.offsetHeight||pc.height);
+  strokes.forEach(p=>{
+    const c=i2c(p.x,p.y,t);
+    const cr=Math.max(2,p.r*t.sx*scaleX);
+    if(p.erase){ctx.globalCompositeOperation='destination-out';ctx.fillStyle='rgba(0,0,0,1)';}
+    else{ctx.globalCompositeOperation='source-over';ctx.fillStyle='rgba(0,255,180,0.55)';}
+    ctx.beginPath();ctx.arc(c.x*scaleX,c.y*scaleY,cr,0,Math.PI*2);ctx.fill();
+  });
+  ctx.globalCompositeOperation='source-over';
+}
+
+function togglePaint(){
+  paintActive=!paintActive;eraseMode=false;
+  const pc=document.getElementById('paint-canvas');
+  const rc=document.getElementById('roi-canvas');
+  const wrap=document.getElementById('roi-wrap');
+  const btn=document.getElementById('paint-btn');
+  const ebtn=document.getElementById('erase-btn');
+  const bsz=document.getElementById('brush-size');
+  if(paintActive){
+    // Set canvas to full size immediately
+    pc.width=wrap.offsetWidth||800;
+    pc.height=wrap.offsetHeight||600;
+    // Force all styles inline — overrides ALL CSS
+    pc.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:99;pointer-events:all;cursor:crosshair';
+    rc.style.pointerEvents='none';
+    redrawPaint(); // restore any existing strokes
+    btn.classList.add('roi-on');btn.textContent='⏹ Stop Paint';
+    ebtn.style.display='';bsz.style.display='';
+    toast('🖌 Paint ON — drag to paint · 🧹 Erase mode available · ▶ Run to apply');
+  }else{
+    pc.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none';
+    rc.style.pointerEvents='';
+    btn.classList.remove('roi-on');btn.textContent='🖌 Paint';
+    ebtn.style.display='none';ebtn.classList.remove('roi-on');ebtn.textContent='🧹 Erase';
+    bsz.style.display='none';
+    paintCursor.visible=false;eraseMode=false;
+    if(curI>=0&&images[curI]&&images[curI].projTemplateActive&&images[curI].projTemplateOverlay)
+      document.getElementById('vmap-img').src='data:image/png;base64,'+images[curI].projTemplateOverlay;
+    toast('🖌 Paint OFF — click ▶ Run to apply strokes');
+  }
+}
+
+function toggleErase(){
+  eraseMode=!eraseMode;
+  const ebtn=document.getElementById('erase-btn');
+  ebtn.classList.toggle('roi-on',eraseMode);
+  ebtn.textContent=eraseMode?'✏ Back to Paint':'🧹 Erase';
+  document.getElementById('paint-canvas').style.cursor=eraseMode?'cell':'crosshair';
+  toast(eraseMode?'🧹 Erase — drag to remove strokes':'🖌 Paint restored');
+}
+
+function clearPaint(){
+  if(curI>=0){images[curI].paintStrokes=[];}
+  const pc=document.getElementById('paint-canvas');
+  if(pc){const ctx=pc.getContext('2d');ctx.clearRect(0,0,pc.width,pc.height);}
+  paintCursor.visible=false;
+  document.getElementById('paint-clear-btn').style.display='none';
+  toast('✕ Paint cleared');
+}
+
+// ── Projection Template ───────────────────────────────────────────────────
+let projTemplateActive=false;
+
+async function applyProjTemplate(){
+  if(busy){toast('Wait for current operation to finish');return;}
+  busy=true;
+  try{
+    const sk=JSON.stringify(SIGMAS[curSI].s);
+    const ms=MINSIZES[curMI];
+    setStatus('<span class="sp"></span> Building projection template…');
+    py.globals.set('_sk',sk);py.globals.set('_ms',ms);
+    const res=JSON.parse(await py.runPythonAsync('build_proj_template(_sk,_ms)'));
+    if(res.error){toast('⚠ '+res.error);return;}
+    toast(`📐 Template built: ${res.n_px.toLocaleString()} px — applying overlay…`);
+    for(let i=0;i<images.length;i++){
+      const img=images[i];
+      if(!img.loaded)continue;
+      if(!img.vmapDone||!img.vmapDone[sk])continue;
+      py.globals.set('_nm',img.name);py.globals.set('_sk',sk);
+      const r=JSON.parse(await py.runPythonAsync('get_template_overlay(_nm,_sk)'));
+      if(r.error)continue;
+      img.projTemplateOverlay=r.b64;
+      img.projTemplateActive=true;
+      if(i===curI&&!paintActive){
+        // Only update vmap display if paint tool is NOT active (avoid disrupting paint canvas)
+        document.getElementById('vmap-img').src='data:image/png;base64,'+r.b64;
+      }
+    }
+    projTemplateActive=true;
+    document.getElementById('clear-template-btn').style.display='';
+
+    setStatus('✓ Projection template active (cyan overlay) · ▶ Run applies template-guided detection');
+    toast('✓ Template overlaid — ▶ Run to apply · 🖌 Paint still works normally');
+  }finally{busy=false;}
+}
+
+function clearProjTemplate(){
+  projTemplateActive=false;
+  images.forEach(img=>{img.projTemplateActive=false;img.projTemplateOverlay=null;});
+  document.getElementById('clear-template-btn').style.display='none';
+  if(curI>=0&&images[curI]&&images[curI].cachedResult){
+    document.getElementById('vmap-img').src='data:image/png;base64,'+images[curI].cachedResult.vmap_b64;
+  }
+
+  toast('✕ Projection template removed');
+}
+
+
+// ── Menu & Modal system ───────────────────────────────────────────────────
+let exportScale=1, exportQuality=0.95;
+
+function toggleMenu(id){
+  const wasOpen=document.getElementById(id).classList.contains('open');
+  closeMenus();
+  if(!wasOpen) document.getElementById(id).classList.add('open');
+}
+function closeMenus(){document.querySelectorAll('.menu-item.open').forEach(el=>el.classList.remove('open'));}
+document.addEventListener('click',e=>{if(!e.target.closest('.menu-item'))closeMenus();});
+
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function closeModalOnBd(e,id){if(e.target===document.getElementById(id))closeModal(id);}
+
+function applyExportSettings(){
+  exportScale=parseFloat(document.getElementById('exp-scale').value)||1;
+  exportQuality=parseInt(document.getElementById('exp-quality').value)/100||0.95;
+  closeModal('export-settings-modal');
+  toast(`✓ Export: ${exportScale}× scale, ${Math.round(exportQuality*100)}% JPG quality`);
+}
+
+// ── Save current panel with scale ─────────────────────────────────────────
+function menuSaveCurrent(panel,fmt){
+  closeMenus();
+  const imgId=panel==='vmap'?'vmap-img':'overlay-img';
+  const img=document.getElementById(imgId);
+  if(!img.src||img.style.display==='none'){toast('Run analysis first');return;}
+  const baseName=(images[curI]?images[curI].name.replace(/\.[^.]+$/,'')+'_':'')+panel;
+  
+  if(exportScale===1&&fmt==='png'){const a=document.createElement('a');a.href=img.src;a.download=baseName+'.png';a.click();return;}
+  
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.round(img.naturalWidth*exportScale);
+  canvas.height=Math.round(img.naturalHeight*exportScale);
+  const ctx=canvas.getContext('2d');
+  if(fmt==='jpg'){ctx.fillStyle='#000';ctx.fillRect(0,0,canvas.width,canvas.height);}
+  ctx.drawImage(img,0,0,canvas.width,canvas.height);
+  const ext=fmt==='png'?'png':'jpg';
+  const mime=fmt==='png'?'image/png':'image/jpeg';
+  const a=document.createElement('a');a.href=canvas.toDataURL(mime,exportQuality);a.download=baseName+'.'+ext;a.click();
+}
+
+// ── Save All as ZIP ───────────────────────────────────────────────────────
+async function saveAllAsZip(){
+  const analyzed=images.filter(i=>i.cachedResult);
+  if(!analyzed.length){toast('No analyzed images to save');return;}
+  if(typeof JSZip==='undefined'){toast('⚠ JSZip not loaded — check internet connection');return;}
+  toast(`📦 Building ZIP of ${analyzed.length} images…`);
+  const zip=new JSZip();
+  for(const img of analyzed){
+    const base=img.name.replace(/\.[^.]+$/,'');
+    // Vmap
+    const vmapData=img.cachedResult.vmap_b64;
+    zip.file(base+'_vesselness.png',vmapData,{base64:true});
+    // Overlay
+    const ovData=img.cachedResult.overlay_b64;
+    zip.file(base+'_overlay.png',ovData,{base64:true});
+  }
+  // Add CSV of metrics
+  const hdr=['File','Vessel %','µm²','mm²','Segments'];
+  const rows=analyzed.map(i=>[i.name,i.cachedResult.fraction,i.cachedResult.vessel_um2,i.cachedResult.vessel_mm2,i.cachedResult.n_segments]);
+  const csv=[hdr,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  zip.file('vessel_metrics.csv',csv);
+  const blob=await zip.generateAsync({type:'blob'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='vessel_analysis.zip';a.click();
+  toast(`✓ ZIP downloaded: ${analyzed.length} images + metrics CSV`);
+}
+
+// ── Video export ──────────────────────────────────────────────────────────
+async function exportVideo(){
+  const panelKey=document.getElementById('vid-panel').value;
+  const fps=Math.max(1,parseInt(document.getElementById('vid-fps').value)||10);
+  const spf=Math.max(1,parseInt(document.getElementById('vid-spf').value)||3);
+  const b64Key=panelKey+'_b64';
+  const frames=images.filter(i=>i.cachedResult&&i.cachedResult[b64Key]);
+  if(!frames.length){toast('No analyzed images for video');return;}
+  if(!window.MediaRecorder){toast('⚠ MediaRecorder not supported — use Chrome or Firefox');return;}
+
+  const status=document.getElementById('vid-status');
+  status.textContent='Loading frames…';
+
+  // Pre-load all frame images
+  const loadedImgs=await Promise.all(frames.map(f=>new Promise(res=>{
+    const el=new Image();
+    el.onload=()=>res(el); el.onerror=()=>res(null);
+    el.src='data:image/png;base64,'+f.cachedResult[b64Key];
+  })));
+  const valid=loadedImgs.filter(Boolean);
+  if(!valid.length){toast('⚠ Could not load frames');return;}
+
+  const W=valid[0].naturalWidth, H=valid[0].naturalHeight;
+  const canvas=document.createElement('canvas');
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+
+  // Draw first frame before starting recorder so stream has content
+  ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+  ctx.drawImage(valid[0],0,0,W,H);
+
+  const mimeType=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm']
+    .find(m=>MediaRecorder.isTypeSupported(m))||'video/webm';
+  const stream=canvas.captureStream(fps);
+  const recorder=new MediaRecorder(stream,{mimeType,videoBitsPerSecond:6000000});
+  const chunks=[];
+  recorder.ondataavailable=e=>{if(e.data&&e.data.size>0)chunks.push(e.data);};
+
+  // Use setInterval to tick at fps — reliable frame delivery
+  const tickMs=1000/fps;
+  const ticksPerFrame=Math.max(1,Math.round(spf*fps));
+  let frameIdx=0, tickCount=0;
+
+  status.textContent=`Recording frame 1/${valid.length}…`;
+  recorder.start(tickMs); // collect data every tick
+
+  await new Promise(resolve=>{
+    const timer=setInterval(()=>{
+      // Redraw current frame (keeps canvas "dirty" so captureStream sees changes)
+      ctx.drawImage(valid[frameIdx],0,0,W,H);
+      tickCount++;
+      if(tickCount>=ticksPerFrame){
+        tickCount=0; frameIdx++;
+        if(frameIdx>=valid.length){
+          clearInterval(timer);
+          // Flush final data then stop
+          recorder.requestData();
+          setTimeout(()=>recorder.stop(),200);
+          resolve();
+          return;
+        }
+        status.textContent=`Recording frame ${frameIdx+1}/${valid.length}…`;
+        ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+        ctx.drawImage(valid[frameIdx],0,0,W,H);
+      }
+    },tickMs);
+  });
+
+  recorder.onstop=()=>{
+    const blob=new Blob(chunks,{type:'video/webm'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='vessel_video.webm';a.click();
+    const totalSec=valid.length*spf;
+    status.textContent=`✓ Done: ${valid.length} frames · ${fps} fps · ~${totalSec}s duration`;
+    toast('✓ Video exported');
+  };
+}
+
+
+// ── Memory management ─────────────────────────────────────────────────────
+async function freeMemory(){
+  if(!py){toast('Python not ready');return;}
+  // Collect names of images that are safely logged OR have been analyzed
+  // Keep only current image's vmaps — free everything else
+  const toFree=images
+    .filter((_,i)=>i!==curI)
+    .map(img=>img.name);
+  if(!toFree.length){toast('Nothing to free — only one image loaded');return;}
+
+  setStatus('<span class="sp"></span> Freeing vmap memory…');
+  py.globals.set('_names',JSON.stringify(toFree));
+  const res=JSON.parse(await py.runPythonAsync('free_vmaps(_names)'));
+
+  // Mark vmapDone as cleared so they recompute on next Run
+  images.forEach((img,i)=>{
+    if(i!==curI) img.vmapDone={};
+  });
+
+  toast(`🧹 Freed ${res.freed} vmaps — ${res.remaining} remaining`);
+  setStatus(`✓ Memory freed: ${res.freed} vmaps cleared · images will recompute on next Run`);
+}
+
+// ── Sequence Analysis ─────────────────────────────────────────────────────
+let seqSelected = new Set();
+let projMethod = 'mean';
+let optimizedMinSize = null;
+let seqResults = [];
+
+async function resetSequence(){
+  if(!confirm('Clear all sequence analysis cache and projection data?\nIndividual image vmaps are kept.\nThis fixes display glitches after sequence analysis.')) return;
+  await py.runPythonAsync('reset_sequence()');
+  seqResults=[];
+  optimizedMinSize=null;
+  _seqOpened=false;
+  projTemplateActive=false;
+  images.forEach(img=>{img.projTemplateActive=false;img.projTemplateOverlay=null;});
+  document.getElementById('clear-template-btn').style.display='none';
+  projMethod='mean';
+  setProjMethod('mean');
+  document.getElementById('proj-thumb-wrap').style.display='none';
+  document.getElementById('optimize-result').style.display='none';
+  document.getElementById('seq-results-body').innerHTML='<div class="log-empty">Run analysis to see results</div>';
+  document.getElementById('seq-result-info').textContent='Run analysis to see results';
+  document.getElementById('seq-chart').style.display='none';
+  document.getElementById('seq-export-btn').style.display='none';
+  seqSelected.clear();
+  images.forEach((_,i)=>seqSelected.add(i));
+  renderSeqImgList();
+  // Re-run current image fresh to clear any display contamination
+  if(curI>=0) analyze();
+  toast('🔄 Sequence reset — display refreshed');
+}
+
+let _seqOpened=false;
+function openSeq(){
+  if(!_seqOpened){seqSelected.clear();images.forEach((_,i)=>seqSelected.add(i));_seqOpened=true;}
+  document.getElementById('seq-backdrop').classList.add('open');
+  renderSeqImgList();
+}
+function closeSeq(){document.getElementById('seq-backdrop').classList.remove('open');}
+function closeSeqOnBd(e){if(e.target===document.getElementById('seq-backdrop'))closeSeq();}
+
+function renderSeqImgList(){
+  const el=document.getElementById('seq-img-list');
+  if(!images.length){el.innerHTML='<div style="font-size:11px;color:#4b5563">No images loaded</div>';return;}
+  el.innerHTML='';
+  images.forEach((img,i)=>{
+    const d=document.createElement('div');
+    d.style.cssText='display:flex;align-items:center;gap:6px;padding:3px;border-radius:4px';
+    d.innerHTML=`<input type="checkbox" id="sc${i}" ${seqSelected.has(i)?'checked':''} onchange="seqToggle(${i},this.checked)" style="cursor:pointer">
+      <label for="sc${i}" style="font-size:11px;color:#d1d5db;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${img.name}">${img.name}</label>`;
+    el.appendChild(d);
+  });
+}
+
+function seqToggle(i,checked){if(checked)seqSelected.add(i);else seqSelected.delete(i);}
+function seqSelAll(v){
+  seqSelected.clear();
+  if(v) images.forEach((_,i)=>seqSelected.add(i));
+  renderSeqImgList();
+}
+const PROJ_HINTS={
+  'max_v':'★ Best for cardiac: captures vessel at any heartbeat phase. Requires vmaps — click "Analyze All Frames" first, or it auto-computes.',
+  'min':'Min intensity = darkest pixel across frames = most contrast-filled moment. Good for angiography.',
+  'std':'Std Dev = motion map. High variance pixels are those that move or change — highlights vessel paths.',
+  'mean':'Mean: averages all frames. Simple but blurs moving structures.',
+  'median':'Median: robust average, ignores outlier frames.'
+};
+function setProjMethod(m){
+  projMethod=m;
+  ['maxv','min','std','mean','med'].forEach(k=>{
+    const id='proj-'+k+'-btn'; const el=document.getElementById(id);
+    if(el) el.className='fb'+(m===({'maxv':'max_v','min':'min','std':'std','mean':'mean','med':'median'}[k])?' on':'');
+  });
+  document.getElementById('proj-method-hint').textContent=PROJ_HINTS[m]||'';
+}
+
+async function computeProjection(){
+  const names=Array.from(seqSelected).map(i=>images[i].name);
+  if(names.length<2){toast('Select at least 2 frames');return;}
+  
+  // Ensure all selected images are loaded in Python
+  setStatus('<span class="sp"></span> Loading images for projection…');
+  for(const idx of seqSelected){
+    const img=images[idx];
+    if(!img.loaded){
+      py.globals.set('_fb',img.bytes);py.globals.set('_nm',img.name);
+      const r=JSON.parse(await py.runPythonAsync('load_img(_nm,_fb)'));
+      img.thumb=r.thumb;img.loaded=true;
+    }
+  }
+  
+  setStatus('<span class="sp"></span> Computing projection…');
+  const sk=JSON.stringify(SIGMAS[curSI].s);
+  py.globals.set('_names',JSON.stringify(names));py.globals.set('_pm',projMethod);py.globals.set('_sk',sk);
+  const res=JSON.parse(await py.runPythonAsync('compute_projection(_names,_pm,_sk)'));
+  if(res.error){toast('⚠ '+res.error);return;}
+  // If max_v projection used pre-computed vmaps, individual image cache is still valid
+  // For other methods, vmaps are untouched — nothing to invalidate
+  
+  document.getElementById('proj-thumb').src=`data:image/jpeg;base64,${res.thumb}`;
+  document.getElementById('proj-thumb-wrap').style.display='';
+  document.getElementById('proj-info').textContent=`${res.n} frames · ${res.w}×${res.h} px`;
+  document.getElementById('optimize-result').style.display='none';
+  document.getElementById('guide-section').style.display='';
+  optimizedMinSize=null;
+  toast('✓ Projection computed from '+res.n+' frames');
+  setStatus('✓ Projection ready — auto-optimize or analyze directly');
+}
+
+async function runAutoOptimize(){
+  const sk=JSON.stringify(SIGMAS[curSI].s);
+  const roiJson=(roi&&roi.closed&&roi.points.length>=3)?JSON.stringify(roi.points):'';
+  
+  // Ensure projection vmap exists
+  setStatus('<span class="sp"></span> Computing vesselness on projection…');
+  py.globals.set('_nm','__proj__');py.globals.set('_sk',sk);
+  // Make sure projection image is named __proj__ in Python
+  const projImg=document.getElementById('proj-thumb');
+  if(!projImg.src){toast('Compute projection first');return;}
+  
+  py.globals.set('_sk',sk);py.globals.set('_roi',roiJson);
+  const res=JSON.parse(await py.runPythonAsync('auto_optimize(_sk,_roi)'));
+  if(res.error){toast('⚠ '+res.error);return;}
+  
+  optimizedMinSize=res.recommended_min_size;
+  drawElbowChart(res.test_sizes,res.areas,res.elbow_idx);
+  document.getElementById('optimize-result').style.display='';
+  
+  // Find MINSIZES index closest to recommendation
+  const mIdx=MINSIZES.reduce((bi,v,i)=>Math.abs(v-optimizedMinSize)<Math.abs(MINSIZES[bi]-optimizedMinSize)?i:bi,0);
+  document.getElementById('optimize-msg').textContent=
+    `Recommended: min size = ${optimizedMinSize} px (closest option: ${MINSIZES[mIdx]})`;
+  toast('🔍 Optimal min size: '+optimizedMinSize+' px');
+  setStatus('✓ Auto-optimize done — recommended min size: '+optimizedMinSize+' px');
+}
+
+function applyOptimized(){
+  if(!optimizedMinSize)return;
+  const mIdx=MINSIZES.reduce((bi,v,i)=>Math.abs(v-optimizedMinSize)<Math.abs(MINSIZES[bi]-optimizedMinSize)?i:bi,0);
+  curMI=mIdx;upBtns();
+  toast('✓ Applied: min size = '+MINSIZES[mIdx]+' px');
+  if(curI>=0)analyze();
+}
+
+function drawElbowChart(sizes,areas,elbowIdx){
+  const canvas=document.getElementById('elbow-chart');
+  canvas.width=canvas.offsetWidth||240;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height,pad=22;
+  ctx.clearRect(0,0,W,H);
+  const maxA=Math.max(...areas)||1;
+  // Bars
+  const bw=(W-pad*2)/sizes.length-2;
+  areas.forEach((a,i)=>{
+    const x=pad+i*((W-pad*2)/sizes.length)+1;
+    const bh=(a/maxA)*(H-pad-4);
+    ctx.fillStyle=i===elbowIdx?'#0891b2':'#1e4e5f';
+    ctx.fillRect(x,H-pad-bh,Math.max(bw,1),bh);
+  });
+  // Elbow line
+  const ex=pad+elbowIdx*((W-pad*2)/sizes.length)+bw/2+1;
+  ctx.strokeStyle='#67e8f9';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+  ctx.beginPath();ctx.moveTo(ex,4);ctx.lineTo(ex,H-pad);ctx.stroke();ctx.setLineDash([]);
+  // Axis labels
+  ctx.fillStyle='#4b5563';ctx.font='9px sans-serif';ctx.textAlign='center';
+  sizes.forEach((s,i)=>{
+    if(i%3===0){
+      const x=pad+i*((W-pad*2)/sizes.length)+bw/2+1;
+      ctx.fillText(s>=1000?(s/1000)+'k':s,x,H-4);
+    }
+  });
+  ctx.textAlign='left';ctx.fillStyle='#6b7280';ctx.font='9px sans-serif';
+  ctx.fillText('Area',2,12);ctx.fillText('Min size',W-40,H-2);
+}
+
+async function applySequence(){
+  const names=Array.from(seqSelected).map(i=>images[i].name);
+  if(names.length<1){toast('Select at least 1 frame');return;}
+  
+  const sk=JSON.stringify(SIGMAS[curSI].s);
+  const ms=MINSIZES[curMI];
+  const pxUm=parseFloat(document.getElementById('px-size').value)||0.1;
+  const roiJson=(roi&&roi.closed&&roi.points.length>=3)?JSON.stringify(roi.points):'';
+  
+  // Load any unloaded images
+  document.getElementById('seq-progress').style.display='';
+  for(let i=0;i<names.length;i++){
+    const idx=Array.from(seqSelected)[i];
+    const img=images[idx];
+    document.getElementById('seq-prog-msg').textContent=`Loading frame ${i+1}/${names.length}…`;
+    document.getElementById('seq-prog-fill').style.width=(i/names.length*40)+'%';
+    if(!img.loaded){
+      py.globals.set('_fb',img.bytes);py.globals.set('_nm',img.name);
+      const r=JSON.parse(await py.runPythonAsync('load_img(_nm,_fb)'));
+      img.thumb=r.thumb;img.loaded=true;
+    }
+  }
+  
+  // Compute missing vmaps
+  for(let i=0;i<names.length;i++){
+    const name=names[i];const idx=Array.from(seqSelected)[i];
+    if(!images[idx].vmapDone||!images[idx].vmapDone[sk]){
+      document.getElementById('seq-prog-msg').textContent=`Computing vesselness: frame ${i+1}/${names.length}…`;
+      document.getElementById('seq-prog-fill').style.width=(40+i/names.length*40)+'%';
+      py.globals.set('_nm',name);py.globals.set('_sk',sk);
+      await py.runPythonAsync('make_vmap(_nm,_sk)');
+      if(!images[idx].vmapDone)images[idx].vmapDone={};
+      images[idx].vmapDone[sk]=true;
+    }
+  }
+  
+  document.getElementById('seq-prog-msg').textContent='Applying filters to all frames…';
+  document.getElementById('seq-prog-fill').style.width='85%';
+  const guideStrength=parseFloat(document.getElementById('guide-slider').value)/100.0;
+  py.globals.set('_names',JSON.stringify(names));
+  py.globals.set('_sk',sk);py.globals.set('_ms',ms);py.globals.set('_px',pxUm);py.globals.set('_roi',roiJson);
+  py.globals.set('_gs',guideStrength);
+  seqResults=JSON.parse(await py.runPythonAsync('apply_sequence_guided(_names,_sk,_ms,_px,_roi,_gs)'));
+  
+  document.getElementById('seq-prog-fill').style.width='100%';
+  setTimeout(()=>document.getElementById('seq-progress').style.display='none',800);
+  
+  renderSeqResults();
+  toast('✓ Sequence analysis complete — '+seqResults.length+' frames');
+  setStatus(`✓ Sequence: ${seqResults.length} frames · sigmas ${SIGMAS[curSI].l} · min ${ms}px`);
+  // Re-run current individual image to ensure its display is correct (not projection)
+  if(curI>=0){setTimeout(()=>{busy=false;analyze();},100);return;}
+}
+
+function renderSeqResults(){
+  if(!seqResults.length)return;
+  const fracs=seqResults.map(r=>r.fraction);
+  const avg=(fracs.reduce((a,b)=>a+b,0)/fracs.length).toFixed(2);
+  const stdv=Math.sqrt(fracs.map(f=>(f-avg)**2).reduce((a,b)=>a+b,0)/fracs.length).toFixed(2);
+  document.getElementById('seq-result-info').textContent=
+    `${seqResults.length} frames · mean ${avg}% · SD ${stdv}% · CV ${(stdv/avg*100).toFixed(1)}%`;
+  document.getElementById('seq-export-btn').style.display='';
+  
+  const body=document.getElementById('seq-results-body');
+  body.innerHTML=`<table><thead><tr><th>#</th><th>Frame</th><th>Vessel %</th><th>µm²</th><th>mm²</th><th>Segments</th></tr></thead>
+  <tbody>${seqResults.map((r,i)=>`<tr><td>${i+1}</td>
+    <td title="${r.name}" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.name.length>22?r.name.slice(0,20)+'…':r.name}</td>
+    <td>${r.fraction}%</td><td>${r.vessel_um2.toLocaleString()}</td><td>${r.vessel_mm2}</td><td>${r.n_segments}</td>
+  </tr>`).join('')}</tbody></table>`;
+  
+  drawSeqChart();
+}
+
+function drawSeqChart(){
+  const chart=document.getElementById('seq-chart');
+  chart.style.display='block';chart.width=chart.offsetWidth||400;
+  const ctx=chart.getContext('2d');
+  const W=chart.width,H=chart.height,pad=28,n=seqResults.length;
+  ctx.clearRect(0,0,W,H);
+  const fracs=seqResults.map(r=>r.fraction);
+  const maxF=Math.max(...fracs)||1;
+  const bw=Math.max(2,(W-pad*2)/n-3);
+  const avg=fracs.reduce((a,b)=>a+b,0)/fracs.length;
+  
+  // Bars
+  fracs.forEach((f,i)=>{
+    const x=pad+i*(W-pad*2)/n+1;
+    const bh=(f/maxF)*(H-pad-4);
+    ctx.fillStyle='#0e7490';ctx.fillRect(x,H-pad-bh,bw,bh);
+  });
+  // Mean line
+  const my=H-pad-(avg/maxF)*(H-pad-4);
+  ctx.strokeStyle='#67e8f9';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(pad,my);ctx.lineTo(W-4,my);ctx.stroke();ctx.setLineDash([]);
+  // Labels
+  ctx.fillStyle='#4b5563';ctx.font='9px sans-serif';ctx.textAlign='center';
+  if(n<=20) fracs.forEach((_,i)=>{const x=pad+i*(W-pad*2)/n+bw/2+1;ctx.fillText(i+1,x,H-2);});
+  ctx.textAlign='right';ctx.fillStyle='#67e8f9';ctx.font='9px sans-serif';
+  ctx.fillText('avg '+avg.toFixed(1)+'%',W-4,my-3);
+  ctx.fillStyle='#6b7280';ctx.textAlign='left';ctx.fillText('Vessel %',2,12);
+  ctx.textAlign='center';ctx.fillText('Frame',W/2,H-2);
+}
+
+function exportSeqCSV(){
+  if(!seqResults.length){alert('No results');return;}
+  const sk=JSON.stringify(SIGMAS[curSI].s);const ms=MINSIZES[curMI];
+  const pxUm=parseFloat(document.getElementById('px-size').value)||0.1;
+  const hdr=['#','Frame','Sigma','Min Size (px)','Pixel Size (µm/px)','ROI','Vessel %','µm²','mm²','Segments'];
+  const roiActive=(roi&&roi.closed)?'Yes':'No';
+  const rows=seqResults.map((r,i)=>[i+1,r.name,SIGMAS[curSI].l,ms,pxUm,roiActive,r.fraction,r.vessel_um2,r.vessel_mm2,r.n_segments]);
+  const csv=[hdr,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='vessel_sequence.csv';a.click();
+}
+
+document.getElementById('px-size').addEventListener('change',()=>{if(curI>=0)analyze();});
+mkBtns();initPy();
+</script>
+
+<!-- Export Settings modal -->
+<div class="modal-backdrop" id="export-settings-modal" onclick="closeModalOnBd(event,'export-settings-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><h3>🖼 Export Resolution</h3><button class="modal-close" onclick="closeModal('export-settings-modal')">✕</button></div>
+    <div class="modal-body">
+      <p>Controls the pixel dimensions of exported images. Higher scale = larger, sharper files.</p>
+      <div class="setting-row">
+        <label>Export scale factor</label>
+        <input type="range" id="exp-scale" min="1" max="4" step="0.5" value="1" oninput="document.getElementById('exp-scale-val').textContent=this.value+'×'">
+        <span class="setting-val" id="exp-scale-val">1×</span>
+      </div>
+      <div class="setting-row">
+        <label>JPG quality</label>
+        <input type="range" id="exp-quality" min="50" max="100" step="5" value="95" oninput="document.getElementById('exp-quality-val').textContent=this.value+'%'">
+        <span class="setting-val" id="exp-quality-val">95%</span>
+      </div>
+      <p style="font-size:11px;color:#484f58">PNG is always lossless. TIFF export saves as high-quality uncompressed PNG with .tiff extension for compatibility.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn" onclick="closeModal('export-settings-modal')">Close</button>
+      <button class="modal-btn primary" onclick="applyExportSettings()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- Video Export modal -->
+<div class="modal-backdrop" id="video-modal" onclick="closeModalOnBd(event,'video-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><h3>🎬 Export Video</h3><button class="modal-close" onclick="closeModal('video-modal')">✕</button></div>
+    <div class="modal-body">
+      <p>Exports all analyzed images as a WebM video. Images are played in sidebar order.</p>
+      <div class="setting-row">
+        <label>Panel to export</label>
+        <select id="vid-panel"><option value="vmap">Vesselness Map</option><option value="overlay">Vessel Overlay</option></select>
+      </div>
+      <div class="setting-row">
+        <label>Frames per second</label>
+        <input type="range" id="vid-fps" min="1" max="30" step="1" value="10" oninput="document.getElementById('vid-fps-val').textContent=this.value+' fps'">
+        <span class="setting-val" id="vid-fps-val">10 fps</span>
+      </div>
+      <div class="setting-row">
+        <label>Seconds per frame</label>
+        <input type="range" id="vid-spf" min="1" max="30" step="1" value="3" oninput="document.getElementById('vid-spf-val').textContent=this.value+' s'">
+        <span class="setting-val" id="vid-spf-val">3 s</span>
+      </div>
+      <div id="vid-status" style="font-size:12px;color:#7c3aed;min-height:18px;margin-top:8px"></div>
+      <p style="font-size:11px;color:#484f58;margin-top:8px">Output: WebM (VP9). Open in Chrome, Firefox, VLC, or convert with HandBrake.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn" onclick="closeModal('video-modal')">Close</button>
+      <button class="modal-btn primary" onclick="exportVideo()">▶ Export Video</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Start Guide modal -->
+<div class="modal-backdrop" id="guide-modal" onclick="closeModalOnBd(event,'guide-modal')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:620px">
+    <div class="modal-header"><h3>📖 Quick Start Guide</h3><button class="modal-close" onclick="closeModal('guide-modal')">✕</button></div>
+    <div class="modal-body">
+      <h4>1. Upload images</h4>
+      <p>Click <strong>+ Upload Images</strong> or drag & drop PNG, JPG, or TIF files anywhere on the window. Multiple files can be uploaded at once.</p>
+      <h4>2. Set pixel size</h4>
+      <p>Enter the physical pixel size in µm/px. For this project: <code>10 px = 1 µm → enter 0.1</code>. This converts pixel areas to µm² and mm².</p>
+      <h4>3. Choose filter settings</h4>
+      <p><strong>Vessel width (sigmas):</strong> Higher value = only detects thicker vessels. Start at <code>10+</code> or <code>12+</code> for coronary angiography.<br>
+      <strong>Min segment size:</strong> Minimum connected vessel area kept. Increase to remove noise fragments. Start at <code>500</code>.</p>
+      <h4>4. Run analysis</h4>
+      <p>Click <strong>▶ Run</strong> to analyze the current image. First run takes 20–40 s (computes vesselness). Subsequent changes are fast.</p>
+      <h4>5. Refine with tools</h4>
+      <p><strong>Draw ROI:</strong> Restrict analysis to a polygon region.<br>
+      <strong>🖌 Paint:</strong> Manually add vessel segments the filter missed.<br>
+      <strong>🧹 Erase:</strong> Remove incorrectly painted strokes.</p>
+      <h4>6. Save results</h4>
+      <p>Click <strong>+ Save to Log</strong> to record metrics. Use <strong>File → Export Measurements CSV</strong> to download all results. Use <strong>File → Save All → ZIP</strong> to batch-export all images.</p>
+    </div>
+    <div class="modal-footer"><button class="modal-btn primary" onclick="closeModal('guide-modal')">Got it</button></div>
+  </div>
+</div>
+
+<!-- Tool Reference modal -->
+<div class="modal-backdrop" id="tools-modal" onclick="closeModalOnBd(event,'tools-modal')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:640px">
+    <div class="modal-header"><h3>🔧 Tool Reference</h3><button class="modal-close" onclick="closeModal('tools-modal')">✕</button></div>
+    <div class="modal-body">
+      <h4>Frangi Vesselness Filter</h4>
+      <p>Detects tubular structures using the Hessian matrix eigenvalues at multiple scales (sigmas). Outputs a probability map where bright = vessel-like. Only sigmas above the selected threshold are used, so higher sigma = only thick vessels detected.</p>
+      <h4>✏ Draw ROI (Region of Interest)</h4>
+      <p>Click to place polygon vertices on the vesselness map. Double-click or snap to the first point to close. Only pixels inside the ROI contribute to the vessel area calculation. Use <strong>Copy ROI / Paste ROI</strong> to apply the same region across multiple images.</p>
+      <h4>🖌 Paint Tool</h4>
+      <p>Manually mark vessel gaps that the filter missed. Strokes are stored in image coordinates and added to the vessel binary mask when ▶ Run is clicked. Five brush sizes available. Use <strong>🧹 Erase</strong> to remove individual strokes.</p>
+      <h4>🎬 Sequence Analysis</h4>
+      <p>For cardiac cycle image stacks. Select frames → compute a projection (Mean/Median/Min/Max Vesselness/Std Dev) → Auto-Optimize min segment size on the projection → Apply Projection Template to all frames → Analyze all frames in batch.</p>
+      <h4>Auto-Optimize</h4>
+      <p>Tests all min segment sizes on the projection image and finds the "elbow" — the point where increasing min size stops removing noise and starts removing real vessels. The bar chart visualizes this transition.</p>
+      <h4>Projection-Guided Fill</h4>
+      <p>For cardiac sequences: where the max vesselness projection detects a vessel (across all frames) AND the current frame has any vesselness signal there (even weak), the threshold is relaxed. Controlled by the Guide Strength slider (0–100%).</p>
+      <h4>📐 Projection Template</h4>
+      <p>Harder version of guided fill. Builds a binary vessel mask from the projection and overlays it as a cyan region on every frame. When ▶ Run is pressed, the template forces vessel detection at 25% of the normal threshold inside template regions.</p>
+    </div>
+    <div class="modal-footer"><button class="modal-btn primary" onclick="closeModal('tools-modal')">Close</button></div>
+  </div>
+</div>
+
+<!-- About modal -->
+<div class="modal-backdrop" id="about-modal" onclick="closeModalOnBd(event,'about-modal')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:440px">
+    <div class="modal-header"><h3>ℹ About</h3><button class="modal-close" onclick="closeModal('about-modal')">✕</button></div>
+    <div class="modal-body" style="text-align:center">
+      <div style="font-size:32px;margin-bottom:8px">🔬</div>
+      <div style="font-size:18px;font-weight:700;color:#e6edf3;margin-bottom:4px">Vessel Analyzer</div>
+      <div style="font-size:13px;color:#7c3aed;margin-bottom:16px;font-weight:600">Version 1.0</div>
+      <div style="text-align:left;background:#0d1117;border-radius:8px;padding:14px;margin-bottom:14px">
+        <div style="margin-bottom:6px"><span style="color:#484f58">Created by</span> <span style="color:#c9d1d9;font-weight:600">Vasco Sequeira, PhD</span></div>
+        <div style="margin-bottom:6px"><span style="color:#484f58">Purpose</span> <span style="color:#c9d1d9">Quantitative analysis of coronary microvasculature from angiography image sequences</span></div>
+        <div style="margin-bottom:6px"><span style="color:#484f58">Algorithm</span> <span style="color:#c9d1d9">Frangi vesselness filter (Frangi et al., 1998, <em>Medical Image Computing</em>)</span></div>
+        <div style="margin-bottom:6px"><span style="color:#484f58">Engine</span> <span style="color:#c9d1d9">Pyodide + scikit-image (Python in browser)</span></div>
+        <div><span style="color:#484f58">License</span> <span style="color:#c9d1d9">Research use</span></div>
+      </div>
+      <p style="font-size:11px;color:#484f58">Developed for research purposes only — not for clinical decision making.</p>
+    </div>
+    <div class="modal-footer"><button class="modal-btn primary" onclick="closeModal('about-modal')">Close</button></div>
+  </div>
+</div>
+
+</body>
+</html>
