@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Vessel Analyzer</title>
+<title>Vessel Analyzer v2.1</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#111827;color:#e5e7eb;height:100vh;overflow:hidden;display:flex;flex-direction:column}
@@ -57,10 +57,61 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#111827;color:#e5e7eb;he
 .act-btn.amber{border-color:#d97706;color:#fcd34d;background:#1c1008}
 .act-btn.amber:hover{background:#d97706;color:#fff}
 /* results */
-.results{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px;overflow:hidden;min-height:0}
-.panel{background:#1f2937;border-radius:8px;display:flex;flex-direction:column;overflow:hidden}
-.ptitle{font-size:10px;color:#6b7280;padding:5px 8px;border-bottom:1px solid #374151;text-transform:uppercase;letter-spacing:.06em;flex-shrink:0;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
-.ptitle-btns{margin-left:auto;display:flex;gap:4px;align-items:center}
+.results{flex:1;display:flex;gap:0;padding:10px;overflow:hidden;min-height:0}
+/* remove grid-mode classes — now handled by flex-basis */
+.results.mode-jenkins #frangi-panel{flex:0 0 130px;min-width:130px}
+.results.mode-jenkins #jenkins-panel{flex:1;min-width:200px}
+.results.mode-frangi #jenkins-panel{flex:0 0 130px;min-width:130px}
+.results.mode-frangi #frangi-panel{flex:1;min-width:200px}
+/* Panel drag-resizer handle */
+.panel-resizer{width:8px;cursor:col-resize;flex-shrink:0;background:#1a2332;
+  border-left:1px solid #1f2937;border-right:1px solid #1f2937;
+  display:flex;align-items:center;justify-content:center;transition:background .12s;border-radius:2px}
+.panel-resizer:hover{background:#374151}
+.panel-resizer::after{content:'';width:2px;height:32px;background:#4b5563;border-radius:2px}
+/* Menubar expandable */
+.menubar{position:relative}
+.menubar-handle{position:absolute;right:-4px;top:0;bottom:0;width:8px;cursor:col-resize;z-index:60}
+.menubar-handle:hover::after{content:'';position:absolute;inset:0 2px;background:rgba(99,102,241,0.35);border-radius:3px}
+/* Default: expanded (horizontal). Collapsed is the special class. */
+.menubar.collapsed{width:38px}
+.menubar.collapsed .menu-btn{writing-mode:vertical-rl;transform:rotate(180deg);padding:10px 4px;text-align:center}
+.menubar.collapsed .menu-dropdown{top:0;left:100%}
+/* Floating Width Log */
+#wlog-float{position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:700px;max-width:95vw;background:#1f2937;
+  border:1px solid #374151;border-top:2px solid #38bdf8;border-radius:8px 8px 0 0;
+  box-shadow:0 -4px 24px rgba(0,0,0,.65);display:none;flex-direction:column;
+  z-index:260;overflow:hidden;min-height:90px;max-height:70vh;resize:none}
+#wlog-float.open{display:flex}
+#wlog-resize-bar{height:6px;cursor:ns-resize;background:#0d1117;flex-shrink:0;border-bottom:1px solid #21262d;transition:background .12s}
+#wlog-resize-bar:hover{background:#21262d}
+#wlog-drag-header{padding:8px 14px;display:flex;align-items:center;gap:10px;
+  cursor:move;user-select:none;flex-shrink:0;border-bottom:1px solid #374151;background:#111827}
+/* panel tab header */
+.panel-tab{display:flex;align-items:center;gap:6px;padding:5px 8px 4px;border-bottom:1px solid #374151;background:#111827;cursor:default;user-select:none;flex-shrink:0;flex-wrap:wrap}
+.panel-tab-label{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;padding:2px 6px;border-radius:4px;transition:background .12s}
+.panel-tab-label:hover{background:#1f2937}
+.panel-tab-label.active{color:#c084fc}
+.panel-tab-expand{font-size:10px;padding:1px 6px;border:1px solid #374151;border-radius:3px;background:none;cursor:pointer;color:#6b7280;white-space:nowrap}
+.panel-tab-expand:hover{border-color:#6b7280;color:#e5e7eb}
+.panel-tab-expand.on{border-color:#c084fc;color:#c084fc;background:#2d1b69}
+.panel{background:#1f2937;border-radius:8px;display:flex;flex-direction:column;overflow:hidden;flex:1;min-width:100px}
+.ptitle{font-size:10px;color:#6b7280;padding:5px 8px;border-bottom:1px solid #374151;text-transform:uppercase;letter-spacing:.06em;flex-shrink:0;display:flex;flex-direction:column;gap:3px}
+.ptitle-top{display:flex;align-items:center;gap:4px;min-height:18px}
+.ptitle-btns{display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+.ptitle-row{display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+.ptitle-sep{width:1px;height:14px;background:#374151;display:inline-block;margin:0 1px;flex-shrink:0}
+/* count order selector */
+.order-sel{display:inline-flex;align-items:center;gap:0;background:#1c1008;border:1.5px solid #d97706;border-radius:4px;overflow:hidden;height:18px;flex-shrink:0}
+.order-sel-val{font-size:11px;color:#fcd34d;font-weight:700;padding:0 5px;min-width:28px;text-align:center}
+.order-sel-btn{background:none;border:none;color:#d97706;cursor:pointer;font-size:11px;padding:0 4px;line-height:1;transition:background .1s;height:100%}
+.order-sel-btn:hover{background:#d97706;color:#fff}
+/* zoom controls */
+.zoom-ctrl{display:inline-flex;align-items:center;gap:2px;margin-left:auto;flex-shrink:0}
+.zoom-btn{padding:2px 6px;border:1.5px solid #374151;border-radius:4px;background:#111827;color:#9ca3af;cursor:pointer;font-size:10px;transition:all .12s;white-space:nowrap}
+.zoom-btn:hover{border-color:#6b7280;color:#e5e7eb}
+.zoom-btn.active{background:#1e3a5f;border-color:#38bdf8;color:#7dd3fc}
 .pb{padding:2px 7px;border:1.5px solid #374151;border-radius:4px;background:#111827;color:#9ca3af;cursor:pointer;font-size:10px;transition:all .12s;white-space:nowrap}
 .pb:hover{border-color:#6b7280;color:#e5e7eb}
 .pb.roi-on{background:#059669;border-color:#059669;color:#fff}
@@ -104,11 +155,16 @@ tr:hover td{background:#0f172a}
 /* toast */
 .toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:#059669;color:#fff;padding:8px 18px;border-radius:20px;font-size:12px;z-index:300;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
+/* Count & Width tools */
+#count-canvas{z-index:4;position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+#width-canvas{z-index:5;position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+.count-badge{background:#f59e0b;color:#000;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:2px;vertical-align:middle;white-space:nowrap}
+.width-badge{background:#38bdf8;color:#000;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:2px;vertical-align:middle;white-space:nowrap}
 
 /* ── Menu bar ─────────────────────────────────────────────────────── */
-.menubar{background:#0d1117;border-bottom:1px solid #21262d;display:flex;align-items:center;gap:2px;padding:0 8px;flex-shrink:0;height:28px;z-index:50}
+.menubar{background:#0d1117;border-right:1px solid #21262d;display:flex;flex-direction:column;align-items:stretch;gap:1px;padding:6px 0;flex-shrink:0;width:108px;z-index:50;overflow:visible}
 .menu-item{position:relative}
-.menu-btn{background:none;border:none;color:#8b949e;font-size:12px;padding:3px 10px;cursor:pointer;border-radius:4px;transition:all .12s;white-space:nowrap}
+.menu-btn{background:none;border:none;color:#8b949e;font-size:12px;padding:5px 10px;cursor:pointer;border-radius:4px;transition:all .12s;white-space:nowrap;writing-mode:horizontal-tb;transform:none;width:100%;text-align:left}
 .menu-btn:hover,.menu-item.open .menu-btn{background:#21262d;color:#e6edf3}
 .menu-dropdown{position:absolute;top:100%;left:0;background:#161b22;border:1px solid #30363d;border-radius:6px;padding:4px;z-index:100;display:none;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
 .menu-item.open .menu-dropdown{display:block}
@@ -157,8 +213,9 @@ tr:hover td{background:#0f172a}
 
 <div class="toast" id="toast"></div>
 
-<div class="app" id="app" style="display:none" style="flex-direction:column">
-  <!-- Menu bar -->
+<div class="app" id="app" style="display:none;flex-direction:column">
+  <div style="display:flex;flex:1;overflow:hidden">
+  <!-- Vertical menu bar — now a column on the far left -->
   <div class="menubar" id="menubar">
     <div class="menu-item" id="m-file">
       <button class="menu-btn" onclick="toggleMenu('m-file')">File</button>
@@ -173,6 +230,7 @@ tr:hover td{background:#0f172a}
         <div class="menu-dd-item" onclick="saveAllAsZip();closeMenus()">📦 Save All Analyzed → ZIP</div>
         <div class="menu-dd-item" onclick="openModal('video-modal');closeMenus()">🎬 Export Video (WebM)…</div>
         <div class="menu-dd-item" onclick="exportCSV();closeMenus()">📊 Export Measurements CSV</div>
+        <div class="menu-dd-item" onclick="exportWidthCSV();closeMenus()">📐 Export Width Measurements CSV</div>
         <div class="menu-sep"></div>
         <div class="menu-dd-item" onclick="if(confirm('Start a new session? All unsaved data will be lost.'))location.reload()">🔄 New Session</div>
       </div>
@@ -199,8 +257,9 @@ tr:hover td{background:#0f172a}
         <div class="menu-dd-item" onclick="openModal('about-modal');closeMenus()">ℹ About</div>
       </div>
     </div>
+  <div class="menubar-handle" id="menubar-handle" title="Drag to expand/collapse menu"></div>
   </div>
-  <div style="display:flex;flex:1;overflow:hidden">
+  <!-- end menubar -->
   <div class="sidebar">
     <button class="upload-btn" onclick="document.getElementById('file-input').click()">＋ Upload Images</button>
     <input type="file" id="file-input" accept="image/*,.tif,.tiff" multiple>
@@ -252,16 +311,34 @@ tr:hover td{background:#0f172a}
       </div>
     </div>
 
-    <div class="results">
-      <div class="panel">
-        <div class="ptitle">Vesselness Map<span id="ptitle-vmap-name" style="color:#a78bfa;font-style:normal;text-transform:none;letter-spacing:normal;font-size:10px"></span>
-          <div class="ptitle-btns">
-            <div class="dl-wrap">
-              <button class="pb" onclick="toggleDL('dl-vmap')">⬇ Save</button>
-              <div class="dl-dropdown" id="dl-vmap">
-                <div class="dl-opt" onclick="downloadImg('vmap-img','png','vesselness_map');toggleDL('dl-vmap')">PNG</div>
-                <div class="dl-opt" onclick="downloadImg('vmap-img','jpg','vesselness_map');toggleDL('dl-vmap')">JPG</div>
-              </div>
+    <div class="results" id="results-grid">
+      <!-- ── Frangi Filter panel ── -->
+      <div class="panel" id="frangi-panel">
+        <div class="panel-tab">
+          <span class="panel-tab-label active" id="frangi-tab-label" onclick="setPanelMode('frangi')" title="Click to focus Frangi panel">🔬 Frangi Filter</span>
+          <span id="ptitle-vmap-name" style="color:#a78bfa;font-style:normal;font-size:9px;letter-spacing:normal;text-transform:none;font-weight:400"></span>
+          <button class="panel-tab-expand" id="frangi-expand-btn" onclick="setPanelMode('frangi')" title="Focus this panel">⊞</button>
+        </div>
+        <!-- Frangi tools: ROI + Paint — shown only when frangi panel is active -->
+        <div id="frangi-tools" style="padding:4px 6px;border-bottom:1px solid #374151;display:flex;gap:3px;align-items:center;flex-wrap:wrap;flex-shrink:0">
+          <button class="pb" id="roi-draw-btn" onclick="toggleDraw()">✏ ROI</button>
+          <button class="pb amber" id="roi-copy-btn" style="display:none" onclick="copyROI()">📋</button>
+          <button class="pb amber" id="roi-paste-btn" style="display:none" onclick="pasteROI()">📌</button>
+          <button class="pb clr" id="roi-clear-btn" style="display:none" onclick="clearROI()">✕ ROI</button>
+          <span class="ptitle-sep"></span>
+          <button class="pb" id="paint-btn" onclick="togglePaint()">🖌 Paint</button>
+          <button class="pb" id="erase-btn" onclick="toggleErase()" style="display:none">🧹 Erase</button>
+          <select id="brush-size" style="background:#111827;border:1.5px solid #374151;border-radius:4px;color:#9ca3af;font-size:10px;padding:1px 3px;cursor:pointer;display:none">
+            <option value="4">XS</option><option value="8">S</option><option value="14" selected>M</option>
+            <option value="22">L</option><option value="35">XL</option>
+          </select>
+          <button class="pb clr" id="paint-clear-btn" style="display:none" onclick="clearPaint()">✕ Paint</button>
+          <span class="ptitle-sep"></span>
+          <div class="dl-wrap">
+            <button class="pb" onclick="toggleDL('dl-vmap')">⬇ Save</button>
+            <div class="dl-dropdown" id="dl-vmap">
+              <div class="dl-opt" onclick="downloadImg('vmap-img','png','vesselness_map');toggleDL('dl-vmap')">PNG</div>
+              <div class="dl-opt" onclick="downloadImg('vmap-img','jpg','vesselness_map');toggleDL('dl-vmap')">JPG</div>
             </div>
           </div>
         </div>
@@ -271,36 +348,64 @@ tr:hover td{background:#0f172a}
           <div class="computing" id="comp-vmap"><span class="sp"></span> Computing…</div>
         </div>
       </div>
-      <div class="panel">
-        <div class="ptitle">Vessel Overlay<span id="ptitle-ov-name" style="color:#a78bfa;font-style:normal;text-transform:none;letter-spacing:normal;font-size:10px"></span>
-          <div class="ptitle-btns">
-            <button class="pb" id="roi-draw-btn" onclick="toggleDraw()">✏ Draw ROI</button>
-            <button class="pb amber" id="roi-copy-btn" style="display:none" onclick="copyROI()">📋 Copy ROI</button>
-            <button class="pb amber" id="roi-paste-btn" style="display:none" onclick="pasteROI()">📌 Paste ROI</button>
-            <button class="pb clr" id="roi-clear-btn" style="display:none" onclick="clearROI()">✕ ROI</button>
-            <span style="width:1px;height:14px;background:#374151;display:inline-block;margin:0 2px"></span>
-            <button class="pb" id="paint-btn" onclick="togglePaint()">🖌 Paint</button>
-            <button class="pb" id="erase-btn" onclick="toggleErase()" style="display:none">🧹 Erase</button>
-            <select id="brush-size" style="background:#111827;border:1.5px solid #374151;border-radius:4px;color:#9ca3af;font-size:10px;padding:1px 3px;cursor:pointer;display:none">
-              <option value="4">XS</option><option value="8">S</option><option value="14" selected>M</option>
-              <option value="22">L</option><option value="35">XL</option>
-            </select>
-            <button class="pb clr" id="paint-clear-btn" style="display:none" onclick="clearPaint()">✕ Paint</button>
+
+      <!-- ── Panel resize handle ── -->
+      <div class="panel-resizer" id="panel-resizer" title="Drag to resize panels"></div>
+
+      <!-- ── Jenkins panel ── -->
+      <div class="panel" id="jenkins-panel">
+        <div class="panel-tab">
+          <span class="panel-tab-label" id="jenkins-tab-label" onclick="setPanelMode('jenkins')" title="Click to focus Jenkins panel">📐 Pearson Method</span>
+          <span id="ptitle-ov-name" style="color:#a78bfa;font-style:normal;font-size:9px;letter-spacing:normal;text-transform:none;font-weight:400"></span>
+          <button class="panel-tab-expand" id="jenkins-expand-btn" onclick="setPanelMode('jenkins')" title="Focus this panel">⊞</button>
+        </div>
+        <!-- Jenkins tools — shown in full -->
+        <div id="jenkins-tools" style="flex-shrink:0">
+          <!-- Row 1: zoom controls -->
+          <div style="padding:3px 6px;border-bottom:1px solid #2a3441;display:flex;gap:3px;align-items:center;flex-wrap:wrap">
+            <span style="font-size:10px;color:#6b7280">Zoom:</span>
+            <span id="zoom-label" style="font-size:10px;color:#6b7280;margin-right:1px">100%</span>
+            <button class="zoom-btn" onclick="ovZoomIn()">🔍+</button>
+            <button class="zoom-btn" onclick="ovZoomOut()">🔍−</button>
+            <button class="zoom-btn" id="pan-btn" onclick="togglePan()" title="Pan mode · Alt+drag · Space+drag">🖐</button>
+            <button class="zoom-btn" onclick="resetOvZoom()" title="Reset zoom">⊙</button>
+            <span class="ptitle-sep"></span>
             <div class="dl-wrap">
               <button class="pb" onclick="toggleDL('dl-ov')">⬇ Save</button>
               <div class="dl-dropdown" id="dl-ov">
-                <div class="dl-opt" onclick="downloadImg('overlay-img','png','vessel_overlay');toggleDL('dl-ov')">PNG</div>
-                <div class="dl-opt" onclick="downloadImg('overlay-img','jpg','vessel_overlay');toggleDL('dl-ov')">JPG</div>
+                <div class="dl-opt" onclick="downloadImg('overlay-img','png','vessel_overlay');toggleDL('dl-ov')">Clean PNG</div>
+                <div class="dl-opt" onclick="downloadImg('overlay-img','jpg','vessel_overlay');toggleDL('dl-ov')">Clean JPG</div>
+                <div style="height:1px;background:#374151;margin:3px 0"></div>
+                <div class="dl-opt" style="color:#f59e0b" onclick="saveAnnotatedOverlay('png');toggleDL('dl-ov')">📌 PNG + Annotations</div>
+                <div class="dl-opt" style="color:#f59e0b" onclick="saveAnnotatedOverlay('jpg');toggleDL('dl-ov')">📌 JPG + Annotations</div>
               </div>
             </div>
+          </div>
+          <!-- Row 2: Count + Width tools -->
+          <div style="padding:3px 6px;border-bottom:1px solid #374151;display:flex;gap:3px;align-items:center;flex-wrap:wrap">
+            <button class="pb" id="count-btn" onclick="toggleCount()" title="Left-click: place marker at current order · Left-click marker: cycle order · Right-click / ×: delete · ESC: stop">🔢 Count</button>
+            <div class="order-sel" id="order-sel-wrap" style="display:none">
+              <button class="order-sel-btn" onclick="changeCountOrder(-1)">‹</button>
+              <span class="order-sel-val" id="count-order-val">1</span>
+              <button class="order-sel-btn" onclick="changeCountOrder(1)">›</button>
+            </div>
+            <span id="count-badge" class="count-badge" style="display:none">0</span>
+            <button class="pb clr" id="count-clear-btn" style="display:none" onclick="clearCounts()">✕ Count</button>
+            <span class="ptitle-sep"></span>
+            <button class="pb" id="width-btn" onclick="toggleWidth()" title="Click: start line · Click again: measure · Right-click / ×: delete line · ESC: cancel">📏 Width</button>
+            <span id="width-badge" class="width-badge" style="display:none">0</span>
+            <button class="pb clr" id="width-clear-btn" style="display:none" onclick="clearWidths()">✕ Widths</button>
+            <button class="pb" id="width-log-btn" style="display:none;border-color:#38bdf8;color:#7dd3fc" onclick="openWidthLog()">📋 Width Log</button>
           </div>
         </div>
         <div class="img-wrap" id="ov-wrap">
           <div class="empty-hint" id="hint-ov">Upload an image</div>
-          <img id="overlay-img" style="display:none">
+          <img id="overlay-img" style="display:none;transform-origin:50% 50%">
           <canvas id="ov-canvas"></canvas>
           <canvas id="paint-canvas"></canvas>
           <canvas id="roi-canvas"></canvas>
+          <canvas id="count-canvas"></canvas>
+          <canvas id="width-canvas"></canvas>
           <div class="computing" id="comp-ov"><span class="sp"></span> Computing…</div>
         </div>
       </div>
@@ -308,6 +413,7 @@ tr:hover td{background:#0f172a}
 
     <div class="status" id="status">Upload an image to begin</div>
   </div>
+  </div><!-- end outer flex row -->
 </div>
 
 
@@ -398,6 +504,24 @@ tr:hover td{background:#0f172a}
     </div>
   </div>
 </div>
+</div>
+
+<!-- Floating Width Log panel (draggable + resizable) -->
+<div id="wlog-float">
+  <div id="wlog-resize-bar" title="Drag top edge to resize"></div>
+  <div id="wlog-drag-header">
+    <span style="font-size:13px;font-weight:600;color:#38bdf8">📏 Vessel Diameter Measurements</span>
+    <span style="font-size:10px;color:#6b7280" id="wlog-count">0 measurements</span>
+    <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+      <span style="font-size:10px;color:#4b5563">⠿ drag to move</span>
+      <button class="act-btn" onclick="exportWidthCSV()">⬇ Export CSV</button>
+      <button class="act-btn" onclick="clearAllWidths()">🗑 Clear All</button>
+      <button class="act-btn" onclick="closeWidthLog()">✕</button>
+    </div>
+  </div>
+  <div id="wlog-body" style="overflow-y:auto;flex:1;min-height:0">
+    <div class="log-empty">No measurements yet.<br>Use 🔢 Count to mark vessels, then 📏 Width to measure diameters.</div>
+  </div>
 </div>
 
 <!-- Log modal -->
@@ -811,13 +935,23 @@ function initCanvases(){
   rc.addEventListener('mousemove',onROIMove);
   rc.addEventListener('mouseleave',()=>{hoverPt=null;drawROI(rc,true);});
   initPaintCanvas();
+  initCountCanvas();
 }
+
+// ── Overlay Zoom state ────────────────────────────────────────────────────
+let ovZoomS=1, ovPanX=0, ovPanY=0, panActive=false, panDragging=false, panDragStart=null;
 
 function getT(wrapId,imgId){
   const wrap=document.getElementById(wrapId),img=document.getElementById(imgId);
   const cw=wrap.offsetWidth,ch=wrap.offsetHeight,iw=img.naturalWidth||cw,ih=img.naturalHeight||ch;
   const ia=iw/ih,ca=cw/ch;let rw,rh,ox,oy;
   if(ia>ca){rw=cw;rh=cw/ia;ox=0;oy=(ch-rh)/2;}else{rh=ch;rw=ch*ia;ox=(cw-rw)/2;oy=0;}
+  if(wrapId==='ov-wrap'&&(ovZoomS!==1||ovPanX!==0||ovPanY!==0)){
+    // zoom centered on wrap center + pan offset
+    const zcx=cw/2+ovPanX, zcy=ch/2+ovPanY;
+    return{ox:zcx+(ox-cw/2)*ovZoomS, oy:zcy+(oy-ch/2)*ovZoomS,
+           sx:rw/iw*ovZoomS, sy:rh/ih*ovZoomS};
+  }
   return{ox,oy,sx:rw/iw,sy:rh/ih};
 }
 function c2i(mx,my,t){return{x:(mx-t.ox)/t.sx,y:(my-t.oy)/t.sy};}
@@ -994,6 +1128,7 @@ function selectImg(i){
     clearDisplay();
   }
   setTimeout(()=>redrawPaint(),50);
+  setTimeout(()=>{redrawCountCanvas();redrawWidthCanvas();updateCountBadge();updateWidthBadge();},50);
   document.getElementById('paint-clear-btn').style.display=(images[i]&&images[i].paintStrokes&&images[i].paintStrokes.length)?'':'none';
 }
 
@@ -1817,6 +1952,915 @@ function exportSeqCSV(){
 
 document.getElementById('px-size').addEventListener('change',()=>{if(curI>=0)analyze();});
 mkBtns();initPy();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ── Vessel Count & Width Measurement Tools  (v2.0)  ──────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+
+let countActive=false, widthActive=false;
+let widthPending=null; // first click in image coords {x,y}
+let widthHover=null;   // live mouse pos in image coords for preview line
+let widthLineHover=null; // {lineNum, imgName} — from hovering the log table
+
+// ── Count canvas init ──────────────────────────────────────────────────────
+function initCountCanvas(){
+  const cc=document.getElementById('count-canvas');
+  const wc=document.getElementById('width-canvas');
+  const wrap=document.getElementById('ov-wrap');
+  new ResizeObserver(()=>{
+    cc.width=wrap.offsetWidth; cc.height=wrap.offsetHeight;
+    wc.width=wrap.offsetWidth; wc.height=wrap.offsetHeight;
+    redrawCountCanvas(); redrawWidthCanvas();
+  }).observe(wrap);
+  cc.addEventListener('click',onCountClick);
+  cc.addEventListener('contextmenu',onCountRightClick);
+  wc.addEventListener('click',onWidthClick);
+  wc.addEventListener('contextmenu',onWidthRightClick);
+  wc.addEventListener('mousemove',onWidthMouseMove);
+  wc.addEventListener('mouseleave',()=>{widthHover=null;redrawWidthCanvas();});
+  // Zoom/pan on ov-wrap
+  wrap.addEventListener('wheel',onOvWheel,{passive:false});
+  wrap.addEventListener('mousedown',onOvPanStart);
+  wrap.addEventListener('mousemove',onOvPanMove);
+  wrap.addEventListener('mouseup',onOvPanEnd);
+  wrap.addEventListener('mouseleave',onOvPanEnd);
+  wrap.addEventListener('dblclick',()=>resetOvZoom());
+}
+
+// ── Zoom/Pan functions ─────────────────────────────────────────────────────
+function applyOvZoom(){
+  const img=document.getElementById('overlay-img');
+  // CSS transform matches getT() math: translate(panX,panY) scale(S) with transform-origin:50% 50%
+  img.style.transform=`translate(${ovPanX}px,${ovPanY}px) scale(${ovZoomS})`;
+  // Update label
+  document.getElementById('zoom-label').textContent=Math.round(ovZoomS*100)+'%';
+  // Redraw all overlay canvases
+  requestAnimationFrame(()=>{
+    drawROI(document.getElementById('roi-canvas'),false);
+    redrawPaint();
+    redrawCountCanvas();
+    redrawWidthCanvas();
+  });
+}
+
+function zoomAt(cx,cy,factor){
+  const wrap=document.getElementById('ov-wrap');
+  const cw=wrap.offsetWidth,ch=wrap.offsetHeight;
+  const newS=Math.max(1,Math.min(12,ovZoomS*factor));
+  const ratio=newS/ovZoomS;
+  // Keep canvas point (cx,cy) under mouse
+  ovPanX=(cx-cw/2)*(1-ratio)+ovPanX*ratio;
+  ovPanY=(cy-ch/2)*(1-ratio)+ovPanY*ratio;
+  ovZoomS=newS;
+  applyOvZoom();
+}
+
+function ovZoomIn(){
+  const wrap=document.getElementById('ov-wrap');
+  zoomAt(wrap.offsetWidth/2,wrap.offsetHeight/2,1.5);
+}
+function ovZoomOut(){
+  const wrap=document.getElementById('ov-wrap');
+  zoomAt(wrap.offsetWidth/2,wrap.offsetHeight/2,1/1.5);
+}
+function resetOvZoom(){
+  ovZoomS=1; ovPanX=0; ovPanY=0;
+  applyOvZoom();
+  toast('⊙ Zoom reset');
+}
+
+function onOvWheel(e){
+  e.preventDefault();
+  const wrap=document.getElementById('ov-wrap');
+  const rect=wrap.getBoundingClientRect();
+  const cx=e.clientX-rect.left, cy=e.clientY-rect.top;
+  const factor=e.deltaY<0?1.15:1/1.15;
+  zoomAt(cx,cy,factor);
+}
+
+function togglePan(){
+  panActive=!panActive;
+  const btn=document.getElementById('pan-btn');
+  btn.classList.toggle('active',panActive);
+  document.getElementById('ov-wrap').style.cursor=panActive?'grab':'';
+  toast(panActive?'🖐 Pan mode ON — drag to pan · double-click resets':'🖐 Pan mode OFF');
+}
+
+function onOvPanStart(e){
+  // Pan with middle mouse, or Alt+left mouse, or when panActive
+  if(e.button===1||e.altKey||panActive){
+    if(e.button!==1) e.preventDefault();
+    panDragging=true;
+    panDragStart={x:e.clientX,y:e.clientY,px:ovPanX,py:ovPanY};
+    document.getElementById('ov-wrap').style.cursor='grabbing';
+    e.stopPropagation();
+  }
+}
+function onOvPanMove(e){
+  if(!panDragging||!panDragStart)return;
+  ovPanX=panDragStart.px+(e.clientX-panDragStart.x);
+  ovPanY=panDragStart.py+(e.clientY-panDragStart.y);
+  applyOvZoom();
+}
+function onOvPanEnd(){
+  if(panDragging){
+    panDragging=false; panDragStart=null;
+    document.getElementById('ov-wrap').style.cursor=panActive?'grab':'';
+  }
+}
+
+// ── Count tool (branching order) ───────────────────────────────────────────
+let currentCountOrder=1;
+
+function changeCountOrder(delta){
+  currentCountOrder=Math.max(1,Math.min(9,currentCountOrder+delta));
+  document.getElementById('count-order-val').textContent=currentCountOrder;
+}
+
+function toggleCount(){
+  if(widthActive)_stopWidth();
+  countActive=!countActive;
+  const cc=document.getElementById('count-canvas');
+  const btn=document.getElementById('count-btn');
+  const orderWrap=document.getElementById('order-sel-wrap');
+  if(countActive){
+    cc.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:4;pointer-events:all;cursor:crosshair';
+    document.getElementById('roi-canvas').style.pointerEvents='none';
+    btn.classList.add('roi-on'); btn.textContent='⏹ Stop Count';
+    orderWrap.style.display='';
+    toast('🔢 Count ON — click to place marker at order '+currentCountOrder+' · left-click marker to cycle order · right-click to delete · ESC stops');
+  }else{
+    cc.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:4;pointer-events:none';
+    document.getElementById('roi-canvas').style.pointerEvents='';
+    btn.classList.remove('roi-on'); btn.textContent='🔢 Count';
+    orderWrap.style.display='none';
+    const n=(curI>=0&&images[curI].vesselCounts)||[];
+    if(n.length>0){
+      toast('✓ Counting done — activating 📏 Width tool');
+      setTimeout(()=>{if(!widthActive)toggleWidth();},350);
+    }
+  }
+}
+
+function onCountClick(e){
+  if(spacePanActive)return;
+  const cc=document.getElementById('count-canvas');
+  const rect=cc.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const t=getT('ov-wrap','overlay-img');
+  if(curI<0)return;
+  if(!images[curI].vesselCounts)images[curI].vesselCounts=[];
+  const counts=images[curI].vesselCounts;
+  const R=12;
+  // Always check × delete badge first (works even with count mode off)
+  for(let i=0;i<counts.length;i++){
+    const sc=i2c(counts[i].x,counts[i].y,t);
+    const xx=sc.x+R*0.7, xy=sc.y-R*0.7;
+    if(Math.sqrt((xx-mx)**2+(xy-my)**2)<8){
+      e.stopPropagation();
+      counts.splice(i,1);
+      images[curI].vesselCounts=counts;
+      redrawCountCanvas(); updateCountBadge();
+      toast('Marker deleted');
+      return;
+    }
+  }
+  if(!countActive)return;
+  e.stopPropagation();
+  // Click on marker body → cycle order
+  for(let i=0;i<counts.length;i++){
+    const sc=i2c(counts[i].x,counts[i].y,t);
+    if(Math.sqrt((sc.x-mx)**2+(sc.y-my)**2)<R){
+      counts[i].order=counts[i].order>=9?1:counts[i].order+1;
+      redrawCountCanvas(); updateCountBadge();
+      toast('Order → '+counts[i].order);
+      return;
+    }
+  }
+  // New marker
+  const ip=c2i(mx,my,t);
+  counts.push({uid:Date.now()+Math.random(),order:currentCountOrder,x:ip.x,y:ip.y});
+  redrawCountCanvas(); updateCountBadge();
+}
+
+function onCountRightClick(e){
+  if(curI<0)return;
+  e.preventDefault(); e.stopPropagation();
+  const cc=document.getElementById('count-canvas');
+  const rect=cc.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const t=getT('ov-wrap','overlay-img');
+  const counts=images[curI].vesselCounts||[];
+  for(let i=0;i<counts.length;i++){
+    const sc=i2c(counts[i].x,counts[i].y,t);
+    if(Math.sqrt((sc.x-mx)**2+(sc.y-my)**2)<18){
+      counts.splice(i,1);
+      images[curI].vesselCounts=counts;
+      redrawCountCanvas(); updateCountBadge();
+      toast('Marker deleted');
+      return;
+    }
+  }
+}
+
+function redrawCountCanvas(){
+  const cc=document.getElementById('count-canvas');
+  if(!cc)return;
+  const ctx=cc.getContext('2d');
+  ctx.clearRect(0,0,cc.width,cc.height);
+  if(curI<0)return;
+  const counts=(images[curI]&&images[curI].vesselCounts)||[];
+  const t=getT('ov-wrap','overlay-img');
+  const R=12;
+  counts.forEach(c=>{
+    const sc=i2c(c.x,c.y,t);
+    // Shadow
+    ctx.beginPath(); ctx.arc(sc.x+1,sc.y+1,R,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fill();
+    // Fill
+    ctx.beginPath(); ctx.arc(sc.x,sc.y,R,0,Math.PI*2);
+    ctx.fillStyle='#f59e0b'; ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.4)'; ctx.lineWidth=1; ctx.stroke();
+    // Order number
+    ctx.font='bold 11px Arial';
+    ctx.fillStyle='#000'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(String(c.order),sc.x,sc.y);
+    // × delete badge
+    const xr=5.5, xx=sc.x+R*0.7, xy=sc.y-R*0.7;
+    ctx.beginPath(); ctx.arc(xx,xy,xr,0,Math.PI*2);
+    ctx.fillStyle='#dc2626'; ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.lineWidth=0.8; ctx.stroke();
+    ctx.font='bold 9px Arial'; ctx.fillStyle='#fff';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('×',xx,xy);
+  });
+  // Always keep interactive when markers exist (so × buttons are clickable)
+  cc.style.pointerEvents=counts.length>0||countActive?'all':'none';
+  if(counts.length>0&&!countActive) cc.style.cursor='default';
+}
+
+function clearCounts(){
+  if(curI>=0)images[curI].vesselCounts=[];
+  redrawCountCanvas(); updateCountBadge();
+  toast('✕ Vessel markers cleared');
+}
+
+function updateCountBadge(){
+  const counts=(curI>=0&&images[curI]&&images[curI].vesselCounts)||[];
+  const badge=document.getElementById('count-badge');
+  const clrBtn=document.getElementById('count-clear-btn');
+  if(counts.length>0){
+    // Show breakdown by order
+    const byOrder={};
+    counts.forEach(c=>{byOrder[c.order]=(byOrder[c.order]||0)+1;});
+    const label=Object.entries(byOrder).map(([o,n])=>`${n}×${o}`).join(' ');
+    badge.style.display=''; badge.textContent=label||counts.length;
+    clrBtn.style.display='';
+  }else{badge.style.display='none';clrBtn.style.display='none';}
+}
+
+// ── Width tool ─────────────────────────────────────────────────────────────
+function _stopWidth(){
+  widthActive=false; widthPending=null;
+  const wc=document.getElementById('width-canvas');
+  wc.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;pointer-events:none';
+  document.getElementById('roi-canvas').style.pointerEvents='';
+  document.getElementById('width-btn').classList.remove('roi-on');
+  document.getElementById('width-btn').textContent='📏 Width';
+  redrawWidthCanvas();
+}
+
+function toggleWidth(){
+  if(countActive)toggleCount(); // stop counting first (will auto-start width via setTimeout → just stop here directly instead)
+  widthActive=!widthActive;
+  widthPending=null;
+  const wc=document.getElementById('width-canvas');
+  const btn=document.getElementById('width-btn');
+  if(widthActive){
+    wc.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;pointer-events:all;cursor:crosshair';
+    document.getElementById('roi-canvas').style.pointerEvents='none';
+    btn.classList.add('roi-on'); btn.textContent='⏹ Stop Width';
+    // If count markers exist, open width log automatically
+    const n=(curI>=0&&images[curI]&&images[curI].vesselCounts&&images[curI].vesselCounts.length)||0;
+    if(n>0) setTimeout(()=>openWidthLog(),400);
+    toast('📏 Width ON — click to set line start, click again to measure · measurements link to nearest vessel marker · ESC cancels');
+  }else{
+    _stopWidth();
+    toast('📏 Width OFF');
+  }
+}
+
+function getNearestVesselId(ix,iy){
+  if(curI<0)return null;
+  const counts=(images[curI]&&images[curI].vesselCounts)||[];
+  let best=null, bestD=Infinity;
+  counts.forEach(c=>{
+    const d=Math.sqrt((c.x-ix)**2+(c.y-iy)**2);
+    if(d<bestD){bestD=d;best=c.id;}
+  });
+  return(bestD<80&&best!==null)?best:null;
+}
+
+function onWidthClick(e){
+  if(spacePanActive)return;
+  const wc=document.getElementById('width-canvas');
+  const rect=wc.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const t=getT('ov-wrap','overlay-img');
+  if(curI<0)return;
+  // Always check × delete on existing lines first (works even when width mode off)
+  const widths=images[curI].vesselWidths||[];
+  for(let i=0;i<widths.length;i++){
+    const pos=_getWidthLineXBtnPos(widths[i],t,i+1);
+    if(Math.sqrt((pos.x-mx)**2+(pos.y-my)**2)<9){
+      e.stopPropagation();
+      images[curI].vesselWidths.splice(i,1);
+      widthPending=null;
+      redrawWidthCanvas(); updateWidthBadge();
+      if(document.getElementById('wlog-backdrop').classList.contains('open'))renderWidthLog();
+      toast('Width line deleted');
+      return;
+    }
+  }
+  if(!widthActive)return;
+  e.stopPropagation();
+  const ip=c2i(mx,my,t);
+  if(!widthPending){
+    widthPending={x:ip.x,y:ip.y};
+    redrawWidthCanvas();
+    toast('📏 Start set — click to place end point');
+  }else{
+    const x1=widthPending.x,y1=widthPending.y,x2=ip.x,y2=ip.y;
+    const pxSize=parseFloat(document.getElementById('px-size').value)||0.1;
+    const pxDist=Math.sqrt((x2-x1)**2+(y2-y1)**2);
+    const umDist=pxDist*pxSize;
+    const vesselId=getNearestVesselId((x1+x2)/2,(y1+y2)/2);
+    if(!images[curI].vesselWidths)images[curI].vesselWidths=[];
+    const meas={id:Date.now()+Math.random(),x1,y1,x2,y2,
+      px:Math.round(pxDist*10)/10,um:Math.round(umDist*10)/10,
+      vesselId,imgName:images[curI].name,time:new Date().toLocaleTimeString()};
+    images[curI].vesselWidths.push(meas);
+    widthPending=null;
+    redrawWidthCanvas(); updateWidthBadge();
+    const vLabel=vesselId?` (V${vesselId})`:'';
+    toast(`📏 Measured${vLabel}: ${meas.px} px · ${meas.um} µm`);
+    if(document.getElementById('wlog-backdrop').classList.contains('open'))renderWidthLog();
+  }
+}
+
+function onWidthMouseMove(e){
+  const wc=document.getElementById('width-canvas');
+  const rect=wc.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  widthHover=c2i(mx,my,getT('ov-wrap','overlay-img'));
+  if(widthActive) redrawWidthCanvas();
+}
+
+function onWidthRightClick(e){
+  e.preventDefault(); e.stopPropagation();
+  if(curI<0)return;
+  if(widthPending){widthPending=null;redrawWidthCanvas();toast('📏 Pending cancelled');return;}
+  const wc=document.getElementById('width-canvas');
+  const rect=wc.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const t=getT('ov-wrap','overlay-img');
+  const ws=images[curI].vesselWidths||[];
+  let bestIdx=-1, bestD=Infinity;
+  ws.forEach((w,i)=>{
+    const s1=i2c(w.x1,w.y1,t), s2=i2c(w.x2,w.y2,t);
+    const dx=s2.x-s1.x,dy=s2.y-s1.y,len2=dx*dx+dy*dy;
+    if(len2>0){
+      const tt=Math.max(0,Math.min(1,((mx-s1.x)*dx+(my-s1.y)*dy)/len2));
+      const ds=Math.sqrt((s1.x+tt*dx-mx)**2+(s1.y+tt*dy-my)**2);
+      if(ds<bestD){bestD=ds;bestIdx=i;}
+    }
+    const midD=Math.sqrt(((s1.x+s2.x)/2-mx)**2+((s1.y+s2.y)/2-my)**2);
+    if(midD<bestD){bestD=midD;bestIdx=i;}
+  });
+  if(bestIdx>=0&&bestD<30){
+    images[curI].vesselWidths.splice(bestIdx,1);
+    widthPending=null;
+    redrawWidthCanvas(); updateWidthBadge();
+    if(document.getElementById('wlog-backdrop').classList.contains('open'))renderWidthLog();
+    toast('Width line deleted');
+  }
+}
+
+function redrawWidthCanvas(){
+  const wc=document.getElementById('width-canvas');
+  if(!wc)return;
+  const ctx=wc.getContext('2d');
+  ctx.clearRect(0,0,wc.width,wc.height);
+  if(curI<0)return;
+  const t=getT('ov-wrap','overlay-img');
+  const pxSize=parseFloat(document.getElementById('px-size').value)||0.1;
+  const widths=(images[curI]&&images[curI].vesselWidths)||[];
+  // Pass 1-based line index so canvas shows "#1", "#2" instead of px/µm
+  widths.forEach((w,i)=>{
+    const isHovered=widthLineHover&&widthLineHover.lineNum===(i+1)&&
+                    widthLineHover.imgName===(images[curI]&&images[curI].name);
+    _drawWidthLine(ctx,w.x1,w.y1,w.x2,w.y2,t,w.px,w.um,w.vesselId,
+      isHovered?'#38bdf8':'#fbbf24',false,true,i+1,isHovered);
+  });
+  if(widthPending){
+    const sc=i2c(widthPending.x,widthPending.y,t);
+    ctx.beginPath(); ctx.arc(sc.x,sc.y,5,0,Math.PI*2);
+    ctx.fillStyle='#38bdf8'; ctx.fill();
+    if(widthHover){
+      const dx=widthHover.x-widthPending.x, dy=widthHover.y-widthPending.y;
+      const pd=Math.sqrt(dx*dx+dy*dy);
+      // Preview line shows px/µm live
+      _drawWidthLine(ctx,widthPending.x,widthPending.y,widthHover.x,widthHover.y,t,
+        Math.round(pd*10)/10,Math.round(pd*pxSize*10)/10,null,'#38bdf8',true,false,null);
+    }
+  }
+  wc.style.pointerEvents=widths.length>0||widthActive?'all':'none';
+  if(widths.length>0&&!widthActive) wc.style.cursor='default';
+}
+
+// lineNum: if provided (1-based int), show "#N" on line; null = show px/µm (preview)
+// isHovered: true = draw with extra glow/thickness for highlight from table hover
+function _drawWidthLine(ctx,x1,y1,x2,y2,t,px,um,vesselId,color,dashed,showX,lineNum,isHovered){
+  const s1=i2c(x1,y1,t), s2=i2c(x2,y2,t);
+  ctx.save();
+  // Shadow
+  ctx.strokeStyle='rgba(0,0,0,0.6)'; ctx.lineWidth=3; ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(s1.x,s1.y); ctx.lineTo(s2.x,s2.y); ctx.stroke();
+  // Glow halo for highlighted line
+  if(isHovered){
+    ctx.strokeStyle='rgba(56,189,248,0.3)'; ctx.lineWidth=10; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(s1.x,s1.y); ctx.lineTo(s2.x,s2.y); ctx.stroke();
+  }
+  // Main line
+  ctx.strokeStyle=color; ctx.lineWidth=isHovered?3:1.8;
+  ctx.setLineDash(dashed?[6,4]:[4,3]);
+  ctx.beginPath(); ctx.moveTo(s1.x,s1.y); ctx.lineTo(s2.x,s2.y); ctx.stroke();
+  ctx.setLineDash([]);
+  // Endpoints
+  [s1,s2].forEach(p=>{
+    ctx.beginPath(); ctx.arc(p.x,p.y,3.5,0,Math.PI*2); ctx.fillStyle=color; ctx.fill();
+  });
+  // Perpendicular offset for label
+  const mx2=(s1.x+s2.x)/2, my2=(s1.y+s2.y)/2;
+  const dx=s2.x-s1.x, dy=s2.y-s1.y;
+  const len=Math.sqrt(dx*dx+dy*dy)||1;
+  let pxOff=-dy/len, pyOff=dx/len;
+  if(pyOff>0){pxOff=-pxOff; pyOff=-pyOff;}
+  pxOff*=18; pyOff*=18;
+  if(Math.abs(dx)<2){pxOff=-12; pyOff=-10;}
+  const lx=mx2+pxOff, ly=my2+pyOff;
+  const pad=3;
+  if(lineNum!=null){
+    // Numbered badge — when hovered show "#N: px / µm", otherwise just "#N"
+    const numLabel=isHovered?`#${lineNum}: ${px}px / ${um}µm`:'#'+lineNum;
+    ctx.font=isHovered?'bold 10px Arial':'bold 11px Arial';
+    const tw=ctx.measureText(numLabel).width;
+    // Pill background
+    const ph=isHovered?18:16, pw=tw+4*2+2;
+    ctx.fillStyle=isHovered?'rgba(56,189,248,0.15)':'rgba(0,0,0,0.85)';
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(lx-pw/2,ly-ph/2,pw,ph,ph/2);
+    else ctx.rect(lx-pw/2,ly-ph/2,pw,ph);
+    ctx.fill();
+    ctx.strokeStyle=color; ctx.lineWidth=isHovered?2:1; ctx.setLineDash([]);
+    ctx.stroke();
+    ctx.fillStyle=color; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(numLabel,lx,ly);
+    // × button right of badge
+    if(showX!==false){
+      const xbx=lx+pw/2+10, xby=ly;
+      ctx.beginPath(); ctx.arc(xbx,xby,6,0,Math.PI*2);
+      ctx.fillStyle='#dc2626'; ctx.fill();
+      ctx.strokeStyle='rgba(0,0,0,0.3)'; ctx.lineWidth=0.8; ctx.stroke();
+      ctx.font='bold 9px Arial'; ctx.fillStyle='#fff';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('×',xbx,xby);
+    }
+  }else{
+    // Preview: show px/µm
+    const label=vesselId?`V${vesselId}: ${px}px / ${um}µm`:`${px}px / ${um}µm`;
+    ctx.font='bold 10px Arial';
+    const tw=ctx.measureText(label).width;
+    ctx.fillStyle='rgba(0,0,0,0.85)';
+    ctx.fillRect(lx-tw/2-pad,ly-7-pad,tw+pad*2,14+pad*2);
+    ctx.fillStyle=color; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(label,lx,ly);
+  }
+  ctx.restore();
+  // Return × position for hit-testing
+  const numLabel=lineNum!=null?'#'+lineNum:'';
+  const estW=lineNum!=null?(numLabel.length*7+pad*2+2):(
+    (vesselId?`V${vesselId}: ${px}px / ${um}µm`:`${px}px / ${um}µm`).length*6);
+  return {xbx:lx+estW/2+10, xby:ly};
+}
+
+function _getWidthLineXBtnPos(w,t,lineNum){
+  const s1=i2c(w.x1,w.y1,t), s2=i2c(w.x2,w.y2,t);
+  const mx2=(s1.x+s2.x)/2, my2=(s1.y+s2.y)/2;
+  const dx=s2.x-s1.x, dy=s2.y-s1.y;
+  const len=Math.sqrt(dx*dx+dy*dy)||1;
+  let pxOff=-dy/len, pyOff=dx/len;
+  if(pyOff>0){pxOff=-pxOff; pyOff=-pyOff;}
+  pxOff*=18; pyOff*=18;
+  if(Math.abs(dx)<2){pxOff=-12; pyOff=-10;}
+  const lx=mx2+pxOff, ly=my2+pyOff;
+  const pad=3;
+  const numLabel=lineNum!=null?'#'+lineNum:'';
+  const estW=lineNum!=null?(numLabel.length*7+pad*2+2):
+    ((w.vesselId?`V${w.vesselId}: ${w.px}px / ${w.um}µm`:`${w.px}px / ${w.um}µm`).length*6);
+  return {x:lx+estW/2+10, y:ly};
+}
+
+function clearWidths(){
+  if(curI>=0)images[curI].vesselWidths=[];
+  widthPending=null;
+  redrawWidthCanvas(); updateWidthBadge();
+}
+function clearAllWidths(){
+  if(!confirm('Clear all width measurements for all images?'))return;
+  images.forEach(img=>{img.vesselWidths=[];});
+  widthPending=null;
+  redrawWidthCanvas(); updateWidthBadge();
+  renderWidthLog();
+  toast('🗑 All width measurements cleared');
+}
+
+function updateWidthBadge(){
+  const widths=(curI>=0&&images[curI]&&images[curI].vesselWidths)||[];
+  const badge=document.getElementById('width-badge');
+  const clrBtn=document.getElementById('width-clear-btn');
+  const logBtn=document.getElementById('width-log-btn');
+  if(widths.length>0){
+    badge.style.display=''; badge.textContent=widths.length+(widths.length!==1?' lines':' line');
+    clrBtn.style.display=''; logBtn.style.display='';
+  }else{
+    badge.style.display='none'; clrBtn.style.display='none'; logBtn.style.display='none';
+  }
+}
+
+// ── Panel mode (Frangi / Jenkins) ─────────────────────────────────────────
+let panelMode='both'; // 'both' | 'frangi' | 'jenkins'
+function setPanelMode(mode){
+  const grid=document.getElementById('results-grid');
+  const fPanel=document.getElementById('frangi-panel');
+  const jPanel=document.getElementById('jenkins-panel');
+  const fLabel=document.getElementById('frangi-tab-label');
+  const jLabel=document.getElementById('jenkins-tab-label');
+  const fBtn=document.getElementById('frangi-expand-btn');
+  const jBtn=document.getElementById('jenkins-expand-btn');
+  if(panelMode===mode) mode='both';
+  panelMode=mode;
+  // Reset any manual flex-basis from the resizer
+  fPanel.style.flex=''; jPanel.style.flex='';
+  grid.className='results'+(mode==='jenkins'?' mode-jenkins':mode==='frangi'?' mode-frangi':'');
+  // In 'both' mode give panels equal space
+  if(mode==='both'){ fPanel.style.flex='1'; jPanel.style.flex='1'; }
+  fLabel.classList.toggle('active',mode!=='jenkins');
+  jLabel.classList.toggle('active',mode!=='frangi');
+  fBtn.textContent=mode==='frangi'?'⊟':'⊞';
+  jBtn.textContent=mode==='jenkins'?'⊟':'⊞';
+  fBtn.classList.toggle('on',mode==='frangi');
+  jBtn.classList.toggle('on',mode==='jenkins');
+}
+
+// ── ESC: cancel pending / exit active tool ─────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    if(widthPending){widthPending=null;redrawWidthCanvas();toast('📏 Pending measurement cancelled');return;}
+    if(widthActive){_stopWidth();toast('📏 Width OFF');return;}
+    if(countActive){
+      countActive=false;
+      document.getElementById('count-canvas').style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:4;pointer-events:none';
+      document.getElementById('roi-canvas').style.pointerEvents='';
+      document.getElementById('count-btn').classList.remove('roi-on');
+      document.getElementById('count-btn').textContent='🔢 Count';
+      document.getElementById('order-sel-wrap').style.display='none';
+      toast('🔢 Count OFF');
+    }
+  }
+});
+
+// ── Space bar → temporary pan (like Illustrator/Photoshop) ────────────────
+let spacePanActive=false, spacePanDragging=false, spacePanStart=null;
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'&&!spacePanActive&&!e.repeat&&!e.target.matches('input,select,textarea')){
+    e.preventDefault();
+    spacePanActive=true;
+    document.getElementById('ov-wrap').style.cursor='grab';
+  }
+});
+document.addEventListener('keyup',e=>{
+  if(e.code==='Space'&&spacePanActive){
+    spacePanActive=false;
+    spacePanDragging=false;
+    spacePanStart=null;
+    // Restore cursor based on active tool
+    const wrap=document.getElementById('ov-wrap');
+    if(countActive||widthActive) wrap.style.cursor='crosshair';
+    else if(panActive) wrap.style.cursor='grab';
+    else wrap.style.cursor='';
+  }
+});
+// Inject space-pan into existing ov-wrap mouse handlers
+const _origPanStart=onOvPanStart;
+document.getElementById('ov-wrap').addEventListener('mousedown',e=>{
+  if(spacePanActive){
+    e.stopPropagation(); e.preventDefault();
+    spacePanDragging=true;
+    spacePanStart={x:e.clientX,y:e.clientY,px:ovPanX,py:ovPanY};
+    document.getElementById('ov-wrap').style.cursor='grabbing';
+  }
+},{capture:true});
+document.getElementById('ov-wrap').addEventListener('mousemove',e=>{
+  if(spacePanDragging&&spacePanStart){
+    ovPanX=spacePanStart.px+(e.clientX-spacePanStart.x);
+    ovPanY=spacePanStart.py+(e.clientY-spacePanStart.y);
+    applyOvZoom();
+  }
+},{capture:true,passive:true});
+document.getElementById('ov-wrap').addEventListener('mouseup',()=>{
+  if(spacePanDragging){spacePanDragging=false;spacePanStart=null;}
+},{capture:true});
+
+
+// ── Width Log panel ────────────────────────────────────────────────────────
+function openWidthLog(){
+  document.getElementById('wlog-backdrop').classList.add('open');
+  renderWidthLog();
+}
+function closeWidthLog(){document.getElementById('wlog-backdrop').classList.remove('open');}
+function closeWidthLogOnBd(e){if(e.target===document.getElementById('wlog-backdrop'))closeWidthLog();}
+
+function highlightWidthLine(lineNum,imgName){
+  widthLineHover={lineNum,imgName};
+  redrawWidthCanvas();
+}
+function clearWidthLineHighlight(){
+  widthLineHover=null;
+  redrawWidthCanvas();
+}
+
+function renderWidthLog(){
+  // Collect measurements, compute per-image line numbers
+  const all=[];
+  images.forEach(img=>{
+    (img.vesselWidths||[]).forEach((w,i)=>all.push({...w,imgDisplayName:img.name,lineNum:i+1}));
+  });
+  const countEl=document.getElementById('wlog-count');
+  countEl.textContent=all.length+' measurement'+(all.length!==1?'s':'');
+  const body=document.getElementById('wlog-body');
+  if(!all.length){
+    body.innerHTML='<div class="log-empty">No measurements yet.<br>Use 🔢 Count to mark vessels, then 📏 Width to measure diameters.</div>';
+    return;
+  }
+  // Main table — Line # is the key identifier linking canvas to table
+  let html=`<table><thead><tr>
+    <th title="Matches the #N label on the canvas">Line #</th>
+    <th>Frame</th><th>Vessel</th>
+    <th>Width (px)</th><th>Width (µm)</th><th>Time</th><th></th>
+  </tr></thead><tbody>`;
+  all.forEach((m)=>{
+    const vLabel=m.vesselId?`<span style="color:#f59e0b;font-weight:700">V${m.vesselId}</span>`:'<span style="color:#4b5563">—</span>';
+    const imgShort=m.imgDisplayName.length>22?'…'+m.imgDisplayName.slice(-20):m.imgDisplayName;
+    const escapedName=m.imgDisplayName.replace(/'/g,"\\'");
+    html+=`<tr style="cursor:pointer" 
+      onmouseenter="highlightWidthLine(${m.lineNum},'${escapedName}')"
+      onmouseleave="clearWidthLineHighlight()">
+      <td><span style="display:inline-block;background:rgba(0,0,0,0.7);border:1px solid #fbbf24;color:#fbbf24;font-weight:700;border-radius:20px;padding:1px 8px;font-size:11px;min-width:28px;text-align:center">#${m.lineNum}</span></td>
+      <td title="${m.imgDisplayName}" style="font-size:10px">${imgShort}</td>
+      <td>${vLabel}</td>
+      <td>${m.px}</td>
+      <td style="color:#38bdf8;font-weight:600">${m.um}</td>
+      <td style="font-size:10px;color:#6b7280">${m.time}</td>
+      <td><button class="del-btn" onclick="event.stopPropagation();delWidthMeas('${m.imgDisplayName}',${m.id})">✕</button></td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  // Per-vessel summary
+  const byVessel={};
+  all.forEach(m=>{
+    if(!m.vesselId)return;
+    const key=m.imgDisplayName+'__V'+m.vesselId;
+    if(!byVessel[key])byVessel[key]={imgName:m.imgDisplayName,vid:m.vesselId,px:[],um:[]};
+    byVessel[key].px.push(m.px);
+    byVessel[key].um.push(m.um);
+  });
+  const sumEntries=Object.values(byVessel);
+  if(sumEntries.length>0){
+    html+='<div style="padding:10px 14px;border-top:1px solid #374151">';
+    html+='<div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Summary by vessel</div>';
+    html+='<table><thead><tr><th>Vessel</th><th>Frame</th><th>n</th><th>Mean (px)</th><th>Mean (µm)</th><th>SD (µm)</th></tr></thead><tbody>';
+    sumEntries.forEach(g=>{
+      const n=g.px.length;
+      const meanPx=(g.px.reduce((a,b)=>a+b,0)/n).toFixed(1);
+      const meanUm=(g.um.reduce((a,b)=>a+b,0)/n).toFixed(1);
+      const sdUm=n>1?Math.sqrt(g.um.reduce((a,b)=>a+(b-parseFloat(meanUm))**2,0)/(n-1)).toFixed(1):'—';
+      const imgShort=g.imgName.length>22?'…'+g.imgName.slice(-20):g.imgName;
+      html+=`<tr>
+        <td style="color:#f59e0b;font-weight:700">V${g.vid}</td>
+        <td style="font-size:10px" title="${g.imgName}">${imgShort}</td>
+        <td>${n}</td><td>${meanPx}</td>
+        <td style="color:#38bdf8;font-weight:600">${meanUm}</td>
+        <td style="color:#9ca3af">${sdUm}</td>
+      </tr>`;
+    });
+    html+='</tbody></table></div>';
+  }
+  body.innerHTML=html;
+}
+
+function delWidthMeas(imgName,id){
+  const img=images.find(i=>i.name===imgName);
+  if(img&&img.vesselWidths)img.vesselWidths=img.vesselWidths.filter(w=>w.id!==id);
+  if(curI>=0&&images[curI]&&images[curI].name===imgName){redrawWidthCanvas();updateWidthBadge();}
+  renderWidthLog();
+}
+
+function exportWidthCSV(){
+  const all=[];
+  images.forEach(img=>(img.vesselWidths||[]).forEach((w,i)=>all.push({...w,imgDisplayName:img.name,lineNum:i+1})));
+  if(!all.length){alert('No width measurements to export.');return;}
+  const hdr=['Line #','Frame','Vessel ID','Width (px)','Width (µm)','x1','y1','x2','y2','Time'];
+  const rows=all.map(m=>[m.lineNum,m.imgDisplayName,m.vesselId||'',m.px,m.um,
+    Math.round(m.x1),Math.round(m.y1),Math.round(m.x2),Math.round(m.y2),m.time]);
+  const csv=[hdr,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='vessel_widths.csv';a.click();
+  toast('✓ Width measurements CSV exported');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ── New v2.3 features ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── Floating Width Log — drag to move, drag top edge to resize ─────────────
+(function initWlogFloat(){
+  const panel=document.getElementById('wlog-float');
+  const header=document.getElementById('wlog-drag-header');
+  const resizeBar=document.getElementById('wlog-resize-bar');
+  if(!panel||!header||!resizeBar)return;
+  // Drag to move
+  let dragging=false,dragStartX=0,dragStartY=0,startLeft=0,startBottom=0;
+  header.addEventListener('mousedown',e=>{
+    if(e.target.closest('button'))return;
+    dragging=true;
+    const r=panel.getBoundingClientRect();
+    dragStartX=e.clientX; dragStartY=e.clientY;
+    startLeft=r.left; startBottom=window.innerHeight-r.bottom;
+    panel.style.transform='none';
+    panel.style.left=startLeft+'px';
+    panel.style.bottom=startBottom+'px';
+    document.addEventListener('mousemove',onDragMove);
+    document.addEventListener('mouseup',onDragEnd);
+    e.preventDefault();
+  });
+  function onDragMove(e){
+    if(!dragging)return;
+    const dx=e.clientX-dragStartX, dy=e.clientY-dragStartY;
+    panel.style.left=Math.max(0,Math.min(window.innerWidth-100,startLeft+dx))+'px';
+    panel.style.bottom=Math.max(0,Math.min(window.innerHeight-60,startBottom-dy))+'px';
+  }
+  function onDragEnd(){dragging=false;document.removeEventListener('mousemove',onDragMove);document.removeEventListener('mouseup',onDragEnd);}
+  // Drag top edge to resize
+  let resizing=false,resizeStartY=0,startHeight=0;
+  resizeBar.addEventListener('mousedown',e=>{
+    resizing=true;
+    resizeStartY=e.clientY;
+    startHeight=panel.getBoundingClientRect().height;
+    document.addEventListener('mousemove',onResizeMove);
+    document.addEventListener('mouseup',onResizeEnd);
+    e.preventDefault();
+  });
+  function onResizeMove(e){
+    if(!resizing)return;
+    const dy=resizeStartY-e.clientY;
+    const newH=Math.max(100,Math.min(window.innerHeight*0.8,startHeight+dy));
+    panel.style.maxHeight=newH+'px';
+    panel.style.height=newH+'px';
+  }
+  function onResizeEnd(){resizing=false;document.removeEventListener('mousemove',onResizeMove);document.removeEventListener('mouseup',onResizeEnd);}
+})();
+
+// ── Panel resizer — drag to change Frangi/Jenkins split ───────────────────
+(function initPanelResizer(){
+  const resizer=document.getElementById('panel-resizer');
+  const frangi=document.getElementById('frangi-panel');
+  const jenkins=document.getElementById('jenkins-panel');
+  const grid=document.getElementById('results-grid');
+  if(!resizer||!frangi||!jenkins)return;
+  let dragging=false,startX=0,startW=0;
+  resizer.addEventListener('mousedown',e=>{
+    dragging=true;
+    startX=e.clientX;
+    startW=frangi.getBoundingClientRect().width;
+    document.body.style.cursor='col-resize';
+    document.body.style.userSelect='none';
+    document.addEventListener('mousemove',onResizerMove);
+    document.addEventListener('mouseup',onResizerEnd);
+    e.preventDefault();
+  });
+  function onResizerMove(e){
+    if(!dragging)return;
+    const dx=e.clientX-startX;
+    const total=grid.getBoundingClientRect().width-20;
+    const newFW=Math.max(100,Math.min(total-100,startW+dx));
+    frangi.style.flex=`0 0 ${newFW}px`;
+    jenkins.style.flex='1';
+    // Clear mode classes since we're manually resizing
+    grid.classList.remove('mode-jenkins','mode-frangi');
+  }
+  function onResizerEnd(){
+    dragging=false;
+    document.body.style.cursor='';
+    document.body.style.userSelect='';
+    document.removeEventListener('mousemove',onResizerMove);
+    document.removeEventListener('mouseup',onResizerEnd);
+  }
+})();
+
+// ── Menubar horizontal/vertical toggle via drag ────────────────────────────
+(function initMenubarResize(){
+  const bar=document.getElementById('menubar');
+  const handle=document.getElementById('menubar-handle');
+  if(!bar||!handle)return;
+  let startX=0,startW=0;
+  handle.addEventListener('mousedown',e=>{
+    startX=e.clientX;
+    startW=bar.getBoundingClientRect().width;
+    document.body.style.cursor='col-resize';
+    document.body.style.userSelect='none';
+    let moved=false;
+    function onMove(ev){
+      const dx=ev.clientX-startX;
+      if(Math.abs(dx)>3) moved=true;
+      if(!moved)return;
+      const newW=Math.max(38,Math.min(150,startW+dx));
+      bar.style.width=newW+'px';
+      // Collapsed when narrow (<70px), expanded otherwise
+      if(newW<70){bar.classList.add('collapsed');}
+      else{bar.classList.remove('collapsed'); bar.style.width='';}
+    }
+    function onUp(){
+      document.body.style.cursor='';
+      document.body.style.userSelect='';
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+      // Single click (no drag): toggle
+      if(!moved){
+        bar.classList.toggle('collapsed');
+        bar.style.width='';
+        document.querySelectorAll('.menu-item.open').forEach(el=>el.classList.remove('open'));
+      }
+    }
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+    e.preventDefault();
+  });
+})();
+
+// ── Save Jenkins overlay + annotations ────────────────────────────────────
+function saveAnnotatedOverlay(fmt){
+  const img=document.getElementById('overlay-img');
+  if(!img.src||img.style.display==='none'){toast('Run analysis first');return;}
+  // Temporarily reset zoom so annotations cover full image
+  const savedS=ovZoomS,savedX=ovPanX,savedY=ovPanY;
+  ovZoomS=1; ovPanX=0; ovPanY=0;
+  // Redraw annotation canvases at zoom=1
+  redrawCountCanvas(); redrawWidthCanvas();
+  const t=getT('ov-wrap','overlay-img');
+  // Create composite canvas at native image resolution
+  const out=document.createElement('canvas');
+  out.width=img.naturalWidth; out.height=img.naturalHeight;
+  const ctx=out.getContext('2d');
+  ctx.drawImage(img,0,0);
+  // Blit the annotation canvases — map from wrap coords to native image coords
+  const rw=img.naturalWidth*t.sx, rh=img.naturalHeight*t.sy;
+  if(rw>0&&rh>0){
+    [document.getElementById('count-canvas'),document.getElementById('width-canvas')].forEach(c=>{
+      try{ctx.drawImage(c,t.ox,t.oy,rw,rh,0,0,img.naturalWidth,img.naturalHeight);}catch(e){}
+    });
+  }
+  // Restore zoom
+  ovZoomS=savedS; ovPanX=savedX; ovPanY=savedY;
+  applyOvZoom();
+  const base=(images[curI]?images[curI].name.replace(/\.[^.]+$/,'')+'_':'')+'overlay_annotated';
+  const mime=fmt==='png'?'image/png':'image/jpeg';
+  const a=document.createElement('a');
+  a.href=out.toDataURL(mime,0.95);
+  a.download=base+'.'+fmt;
+  a.click();
+  toast('✓ Annotated overlay saved');
+}
+
+// ── Fix openWidthLog / closeWidthLog to use floating panel ────────────────
+function openWidthLog(){
+  document.getElementById('wlog-float').classList.add('open');
+  renderWidthLog();
+}
+function closeWidthLog(){
+  document.getElementById('wlog-float').classList.remove('open');
+}
+function closeWidthLogOnBd(){} // no-op, floating panel doesn't use backdrop
 </script>
 
 <!-- Export Settings modal -->
@@ -1918,6 +2962,10 @@ mkBtns();initPy();
       <p>For cardiac sequences: where the max vesselness projection detects a vessel (across all frames) AND the current frame has any vesselness signal there (even weak), the threshold is relaxed. Controlled by the Guide Strength slider (0–100%).</p>
       <h4>📐 Projection Template</h4>
       <p>Harder version of guided fill. Builds a binary vessel mask from the projection and overlays it as a cyan region on every frame. When ▶ Run is pressed, the template forces vessel detection at 25% of the normal threshold inside template regions.</p>
+      <h4>🔢 Count Vessels</h4>
+      <p>Manually count vessels by clicking on the overlay image. Each click places a numbered yellow marker. Click an existing marker to remove it (remaining markers renumber automatically). When you click Stop Count, the Width tool activates automatically if markers exist. Press ESC at any time to exit.</p>
+      <h4>📏 Width Measurement</h4>
+      <p>Draw a measurement line across a vessel: click to set the start point, then click to set the end point. The pixel distance and µm distance (using the current µm/px setting) are displayed on the line. If vessel count markers are present, the measurement is automatically linked to the nearest marker (within 80 image pixels). Multiple lines can be drawn per frame. Open 📋 Width Log to see a summary table with mean and SD per vessel, and to export to CSV. Press ESC to cancel a pending start point.</p>
     </div>
     <div class="modal-footer"><button class="modal-btn primary" onclick="closeModal('tools-modal')">Close</button></div>
   </div>
@@ -1930,11 +2978,11 @@ mkBtns();initPy();
     <div class="modal-body" style="text-align:center">
       <div style="font-size:32px;margin-bottom:8px">🔬</div>
       <div style="font-size:18px;font-weight:700;color:#e6edf3;margin-bottom:4px">Vessel Analyzer</div>
-      <div style="font-size:13px;color:#7c3aed;margin-bottom:16px;font-weight:600">Version 1.0</div>
+      <div style="font-size:13px;color:#7c3aed;margin-bottom:16px;font-weight:600">Version 2.5</div>
       <div style="text-align:left;background:#0d1117;border-radius:8px;padding:14px;margin-bottom:14px">
         <div style="margin-bottom:6px"><span style="color:#484f58">Created by</span> <span style="color:#c9d1d9;font-weight:600">Vasco Sequeira, PhD</span></div>
         <div style="margin-bottom:6px"><span style="color:#484f58">Purpose</span> <span style="color:#c9d1d9">Quantitative analysis of coronary microvasculature from angiography image sequences</span></div>
-        <div style="margin-bottom:6px"><span style="color:#484f58">Algorithm</span> <span style="color:#c9d1d9">Frangi vesselness filter (Frangi et al., 1998, <em>Medical Image Computing</em>)</span></div>
+        <div style="margin-bottom:6px"><span style="color:#484f58">Algorithm</span> <span style="color:#c9d1d9">Frangi vesselness filter (Frangi et al., 1998, <em>Medical Image Computing</em>); vessel width measurement using the Pearson approach (Jenkins et al., 2012, <em>Arterioscler Thromb Vasc Biol</em>)</span></div>
         <div style="margin-bottom:6px"><span style="color:#484f58">Engine</span> <span style="color:#c9d1d9">Pyodide + scikit-image (Python in browser)</span></div>
         <div><span style="color:#484f58">License</span> <span style="color:#c9d1d9">Research use</span></div>
       </div>
